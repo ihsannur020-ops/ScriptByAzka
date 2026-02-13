@@ -777,19 +777,6 @@ local function createTeleportUI()
 	ttitle.TextXAlignment = Enum.TextXAlignment.Left
 	ttitle.Parent = tbar
 
-	local tpMinBtn = Instance.new("TextButton")
-	tpMinBtn.Size = UDim2.fromOffset(36, 24)
-	tpMinBtn.Position = UDim2.new(1, -84, 0.5, -12)
-	tpMinBtn.Text = "—"
-	tpMinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-	tpMinBtn.TextColor3 = Color3.fromRGB(200, 205, 220)
-	Instance.new("UICorner", tpMinBtn).CornerRadius = UDim.new(0, 8)
-	tpMinBtn.Parent = tbar
-	tpMinBtn.MouseButton1Click:Connect(function()
-		main.Visible = false
-		tpMin.Visible = true
-	end)
-
 	local tpClose = Instance.new("TextButton")
 	tpClose.Size = UDim2.fromOffset(36, 24)
 	tpClose.Position = UDim2.new(1, -44, 0.5, -12)
@@ -803,21 +790,6 @@ local function createTeleportUI()
 		tpMin.Visible = false
 		main.Visible = true
 	end)
-
-	-- Body dengan scrolling (langsung tanpa container tambahan)
-	local tbody = Instance.new("ScrollingFrame")
-	tbody.Size = UDim2.new(1, -20, 1, -50)
-	tbody.Position = UDim2.new(0, 10, 0, 44)
-	tbody.BackgroundColor3 = Color3.fromRGB(30, 30, 36) -- background langsung di scrolling frame
-	tbody.BackgroundTransparency = 0
-	tbody.ScrollBarThickness = 6
-	tbody.CanvasSize = UDim2.new(0, 0, 0, 0)
-	Instance.new("UICorner", tbody).CornerRadius = UDim.new(0, 8)
-	tbody.Parent = main
-
-	local tlayout = Instance.new("UIListLayout", tbody)
-	tlayout.Padding = UDim.new(0, 8)
-	tlayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 	-- Tombol Save Teleport (bold, ukuran sedang)
 	local saveBtn = Instance.new("TextButton")
@@ -841,13 +813,22 @@ local function createTeleportUI()
 	savedLabel.TextXAlignment = Enum.TextXAlignment.Left
 	savedLabel.Parent = tbody
 
-	-- List teleport (langsung sebagai scrolling frame, sudah di atas, jadi kita tidak perlu frame container)
-	-- Tapi kita sudah punya tbody sebagai scrolling, jadi kita akan menambahkan item ke tbody.
-	-- Untuk memisahkan antara tombol save, label, dan list, kita perlu mengatur canvas size.
-	-- Kita akan menambahkan frame khusus untuk list di dalam tbody agar mudah mengatur ukuran.
-	-- Atau kita bisa membuat list sebagai frame dengan ukuran tetap dan scroll di dalamnya? Lebih baik kita buat frame list yang merupakan anak tbody, dengan ukuran tetap, dan di dalamnya ada scrolling frame lagi.
-	-- Tapi permintaan "hapus -- Container untuk list" berarti kita menghapus listContainer yang sebelumnya membungkus listScroll. Jadi kita akan langsung menempatkan listScroll sebagai anak tbody tanpa pembungkus. Namun listScroll perlu background dan ukuran tertentu. Kita buat listScroll dengan ukuran tetap dan background, lalu letakkan di tbody.
-	
+
+	-- Body dengan scrolling (langsung tanpa container tambahan)
+	local tbody = Instance.new("ScrollingFrame")
+	tbody.Size = UDim2.new(1, -20, 1, -50)
+	tbody.Position = UDim2.new(0, 10, 0, 44)
+	tbody.BackgroundColor3 = Color3.fromRGB(30, 30, 36) -- background langsung di scrolling frame
+	tbody.BackgroundTransparency = 0
+	tbody.ScrollBarThickness = 6
+	tbody.CanvasSize = UDim2.new(0, 0, 0, 0)
+	Instance.new("UICorner", tbody).CornerRadius = UDim.new(0, 8)
+	tbody.Parent = main
+
+	local tlayout = Instance.new("UIListLayout", tbody)
+	tlayout.Padding = UDim.new(0, 8)
+	tlayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
 	local listScroll = Instance.new("ScrollingFrame")
 	listScroll.Size = UDim2.new(1, -10, 0, 200) -- tinggi tetap 200
 	listScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
@@ -1122,3 +1103,4 @@ task.wait(0.5)
 notif:Destroy()
 
 print("Script BY Azka - Ultimate Controller (final + perbaikan TP UI) loaded")
+
