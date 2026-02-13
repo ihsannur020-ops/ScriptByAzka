@@ -796,17 +796,6 @@ local function createTeleportUI()
 	Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 8)
 	saveBtn.Parent = tbody
 
-	-- Label "Teleport Saved" (bold, besar)
-	local savedLabel = Instance.new("TextLabel")
-	savedLabel.Size = UDim2.new(1, -10, 0, 30)
-	savedLabel.BackgroundTransparency = 1
-	savedLabel.Text = "Teleport Saved"
-	savedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	savedLabel.Font = Enum.Font.GothamBold
-	savedLabel.TextSize = 18
-	savedLabel.TextXAlignment = Enum.TextXAlignment.Left
-	savedLabel.Parent = tbody
-
 	-- List teleport (scrolling frame di dalam body)
 	local listScroll = Instance.new("ScrollingFrame")
 	listScroll.Size = UDim2.new(1, -10, 0, 200)
@@ -1079,3 +1068,4 @@ task.wait(0.5)
 notif:Destroy()
 
 print("Script BY Azka - Ultimate Controller (final + TP UI tanpa minimize) loaded")
+
