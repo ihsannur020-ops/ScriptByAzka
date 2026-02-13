@@ -1,16 +1,15 @@
 --[[
-	Script BY Azka - Ultimate Controller (Final + Perbaikan TP UI)
+	Script BY Azka - Ultimate Controller (Final + TP UI tanpa minimize)
 	- WalkSpeed slider (1-200) dengan nilai di pojok kanan
 	- Boost slider (0-500) dengan nilai di pojok kanan
 	- Inf Jump, Noclip toggle
 	- Fly UI toggle (munculkan/sembunyikan panel fly)
 	- TP UI toggle (munculkan/sembunyikan panel teleport)
-	- Semua UI dapat di-drag, minimize, close
-	- Fly UI dan TP UI memiliki minimize internal sendiri
+	- Semua UI dapat di-drag, close
+	- Fly UI memiliki minimize internal sendiri
 	- Main menu menyesuaikan tinggi konten
 	- Toggle bekerja benar: ON = tampil, OFF = sembunyi
-	- Teleport UI: tanpa container list, hanya scrolling list langsung, tanpa tombol Setting
-	- Semua tombol menggunakan gaya teks yang konsisten
+	- Teleport UI: tanpa minimize, hanya close, layout: Save button, label, list, pagination
 ]]
 
 -- Hapus GUI lama jika ada
@@ -123,7 +122,7 @@ title.TextColor3 = Color3.fromRGB(230, 235, 255)
 title.Text = "Script BY Azka"
 title.Parent = titleBar
 
--- Minimize button
+-- Minimize button (for main menu)
 local minBtn = Instance.new("TextButton")
 minBtn.Name = "Minimize"
 minBtn.Size = UDim2.fromOffset(36, 24)
@@ -499,7 +498,7 @@ local function createFlyUI()
 	flyFrame.Parent = flyGui
 	flyFrame.Visible = false
 
-	-- Buttons (sama seperti sebelumnya)
+	-- Buttons
 	local up = Instance.new("TextButton")
 	up.Name = "up"
 	up.Parent = flyFrame
@@ -722,7 +721,7 @@ flyUIBtn.MouseButton1Click:Connect(function()
 	setFlyUIVisible(newState)
 end)
 
--- ========== TELEPORT UI (tanpa container list, tanpa tombol Setting) ==========
+-- ========== TELEPORT UI (tanpa minimize) ==========
 _G.AzkaTeleports = _G.AzkaTeleports or {}
 
 local function createTeleportUI()
@@ -731,22 +730,6 @@ local function createTeleportUI()
 	tpGui.ResetOnSpawn = false
 	tpGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	tpGui.Parent = CoreGui
-
-	-- Minimized button (TP) - tombol bulat kecil
-	local tpMin = Instance.new("TextButton")
-	tpMin.Name = "TPMinimized"
-	tpMin.Visible = false
-	tpMin.Text = "TP"
-	tpMin.Font = Enum.Font.GothamBold
-	tpMin.TextSize = 16
-	tpMin.Size = UDim2.fromOffset(40, 40)
-	tpMin.Position = UDim2.new(0.6, -20, 0.45, -20)
-	tpMin.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-	tpMin.TextColor3 = Color3.fromRGB(220, 230, 255)
-	Instance.new("UICorner", tpMin).CornerRadius = UDim.new(1, 0)
-	Instance.new("UIStroke", tpMin).Color = Color3.fromRGB(80, 120, 255)
-	tpMin.Parent = tpGui
-	makeDraggable(tpMin, tpMin)
 
 	-- Main Teleport Panel
 	local main = Instance.new("Frame")
@@ -759,7 +742,7 @@ local function createTeleportUI()
 	Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
 	Instance.new("UIStroke", main).Color = Color3.fromRGB(80, 120, 255)
 
-	-- Title bar
+	-- Title bar (tanpa minimize button)
 	local tbar = Instance.new("Frame")
 	tbar.Size = UDim2.new(1, 0, 0, 36)
 	tbar.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
@@ -777,6 +760,7 @@ local function createTeleportUI()
 	ttitle.TextXAlignment = Enum.TextXAlignment.Left
 	ttitle.Parent = tbar
 
+	-- Hanya close button (X)
 	local tpClose = Instance.new("TextButton")
 	tpClose.Size = UDim2.fromOffset(36, 24)
 	tpClose.Position = UDim2.new(1, -44, 0.5, -12)
@@ -786,10 +770,20 @@ local function createTeleportUI()
 	Instance.new("UICorner", tpClose).CornerRadius = UDim.new(0, 8)
 	tpClose.Parent = tbar
 
-	tpMin.MouseButton1Click:Connect(function()
-		tpMin.Visible = false
-		main.Visible = true
-	end)
+	-- Body dengan scrolling
+	local tbody = Instance.new("ScrollingFrame")
+	tbody.Size = UDim2.new(1, -20, 1, -50)
+	tbody.Position = UDim2.new(0, 10, 0, 44)
+	tbody.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+	tbody.BackgroundTransparency = 0
+	tbody.ScrollBarThickness = 6
+	tbody.CanvasSize = UDim2.new(0, 0, 0, 0)
+	Instance.new("UICorner", tbody).CornerRadius = UDim.new(0, 8)
+	tbody.Parent = main
+
+	local tlayout = Instance.new("UIListLayout", tbody)
+	tlayout.Padding = UDim.new(0, 8)
+	tlayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 	-- Tombol Save Teleport (bold, ukuran sedang)
 	local saveBtn = Instance.new("TextButton")
@@ -798,7 +792,7 @@ local function createTeleportUI()
 	saveBtn.Text = "Save Teleport"
 	saveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	saveBtn.Font = Enum.Font.GothamBold
-	saveBtn.TextSize = 16 -- sedang
+	saveBtn.TextSize = 16
 	Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 8)
 	saveBtn.Parent = tbody
 
@@ -813,24 +807,9 @@ local function createTeleportUI()
 	savedLabel.TextXAlignment = Enum.TextXAlignment.Left
 	savedLabel.Parent = tbody
 
-
-	-- Body dengan scrolling (langsung tanpa container tambahan)
-	local tbody = Instance.new("ScrollingFrame")
-	tbody.Size = UDim2.new(1, -20, 1, -50)
-	tbody.Position = UDim2.new(0, 10, 0, 44)
-	tbody.BackgroundColor3 = Color3.fromRGB(30, 30, 36) -- background langsung di scrolling frame
-	tbody.BackgroundTransparency = 0
-	tbody.ScrollBarThickness = 6
-	tbody.CanvasSize = UDim2.new(0, 0, 0, 0)
-	Instance.new("UICorner", tbody).CornerRadius = UDim.new(0, 8)
-	tbody.Parent = main
-
-	local tlayout = Instance.new("UIListLayout", tbody)
-	tlayout.Padding = UDim.new(0, 8)
-	tlayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
+	-- List teleport (scrolling frame di dalam body)
 	local listScroll = Instance.new("ScrollingFrame")
-	listScroll.Size = UDim2.new(1, -10, 0, 200) -- tinggi tetap 200
+	listScroll.Size = UDim2.new(1, -10, 0, 200)
 	listScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
 	listScroll.BackgroundTransparency = 0
 	listScroll.ScrollBarThickness = 6
@@ -842,7 +821,7 @@ local function createTeleportUI()
 	listLayout.Padding = UDim.new(0, 5)
 	listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-	-- Pagination (tetap di bawah list)
+	-- Pagination frame
 	local pageFrame = Instance.new("Frame")
 	pageFrame.Size = UDim2.new(1, -10, 0, 30)
 	pageFrame.BackgroundTransparency = 1
@@ -972,7 +951,7 @@ local function createTeleportUI()
 	subTitle.BackgroundColor3 = Color3.fromRGB(28,28,34)
 	subTitle.Text = "Save Teleport"
 	subTitle.Font = Enum.Font.GothamBold
-	subTitle.TextSize = 18 -- sedang
+	subTitle.TextSize = 18
 	subTitle.TextColor3 = Color3.fromRGB(230,235,255)
 	Instance.new("UICorner", subTitle).CornerRadius = UDim.new(0,12)
 	subTitle.Parent = saveSub
@@ -1051,18 +1030,15 @@ local function createTeleportUI()
 	end)
 
 	refreshList()
-	return tpGui, main, tpMin, tpClose
+	return tpGui, main, tpClose
 end
 
 -- Buat TP UI
-local tpGui, tpMain, tpMin, tpClose = createTeleportUI()
+local tpGui, tpMain, tpClose = createTeleportUI()
 
 -- Fungsi untuk mengatur visibilitas TP UI
 local function setTPUIVisible(flag)
 	tpMain.Visible = flag
-	if not flag then
-		tpMin.Visible = false
-	end
 	tpUIBtn.Text = "TP UI" .. (flag and ": ON" or ": OFF")
 	tpUIBtn.BackgroundColor3 = flag and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
 end
@@ -1102,5 +1078,4 @@ TweenService:Create(notif, TweenInfo.new(0.5), {BackgroundTransparency = 1, Text
 task.wait(0.5)
 notif:Destroy()
 
-print("Script BY Azka - Ultimate Controller (final + perbaikan TP UI) loaded")
-
+print("Script BY Azka - Ultimate Controller (final + TP UI tanpa minimize) loaded")
