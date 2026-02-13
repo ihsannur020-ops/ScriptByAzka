@@ -1,6 +1,7 @@
 --[[
 	Script BY Azka - Ultimate Controller
-	Fitur: WalkSpeed (1-200) + Boost (0-500), Inf Jump, Noclip, Fly UI, Teleport UI
+	Fitur: WalkSpeed (1-200) + Boost (0-500), Jump Power (1-200) + Boost (0-500)
+	       Inf Jump, Noclip, Fly UI, Teleport UI dengan sistem save dan edit
 	Modern Minimalist UI, draggable, replace on re-execute
 ]]
 
@@ -82,11 +83,11 @@ gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = CoreGui
 
--- Main panel (height increased to 160 to fit two rows)
+-- Main panel (height increased to 210)
 local panel = Instance.new("Frame")
 panel.Name = "Panel"
-panel.Size = UDim2.fromOffset(300, 160)
-panel.Position = UDim2.new(0.5, -150, 0.4, -80)
+panel.Size = UDim2.fromOffset(300, 210)
+panel.Position = UDim2.new(0.5, -150, 0.3, -105)
 panel.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 panel.Parent = gui
 
@@ -111,7 +112,7 @@ title.BackgroundTransparency = 1
 title.Size = UDim2.new(1, -90, 1, 0)
 title.Position = UDim2.new(0, 12, 0, 0)
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.Font = Enum.Font.GothamSemibold
+title.Font = Enum.Font.GothamBold  -- BOLD
 title.TextSize = 16
 title.TextColor3 = Color3.fromRGB(230, 235, 255)
 title.Text = "Script BY Azka"
@@ -151,105 +152,126 @@ body.Position = UDim2.new(0, 12, 0, 34)
 body.BackgroundTransparency = 1
 body.Parent = panel
 
--- ===== WalkSpeed Slider =====
-local wsLabel = Instance.new("TextLabel")
-wsLabel.BackgroundTransparency = 1
-wsLabel.Size = UDim2.new(1, 0, 0, 20)
-wsLabel.TextXAlignment = Enum.TextXAlignment.Left
-wsLabel.Font = Enum.Font.Gotham
-wsLabel.TextSize = 14
-wsLabel.TextColor3 = Color3.fromRGB(210, 215, 230)
-wsLabel.Text = "WalkSpeed"
-wsLabel.Parent = body
+-- Helper to create a slider
+local function createSlider(body, yPos, labelText, minVal, maxVal, defaultVal, valueChanged)
+    local label = Instance.new("TextLabel")
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, 0, 0, 20)
+    label.Position = UDim2.new(0, 0, 0, yPos)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextColor3 = Color3.fromRGB(210, 215, 230)
+    label.Text = labelText
+    label.Parent = body
 
-local wsValue = Instance.new("TextLabel")
-wsValue.BackgroundTransparency = 1
-wsValue.Size = UDim2.new(0, 60, 0, 20)
-wsValue.Position = UDim2.new(1, -60, 0, 0)
-wsValue.TextXAlignment = Enum.TextXAlignment.Right
-wsValue.Font = Enum.Font.GothamMedium
-wsValue.TextSize = 14
-wsValue.TextColor3 = Color3.fromRGB(180, 220, 255)
-wsValue.Text = "1"
-wsValue.Parent = body
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Size = UDim2.new(0, 60, 0, 20)
+    valueLabel.Position = UDim2.new(1, -60, 0, yPos)
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Font = Enum.Font.GothamMedium
+    valueLabel.TextSize = 14
+    valueLabel.TextColor3 = Color3.fromRGB(180, 220, 255)
+    valueLabel.Text = tostring(defaultVal)
+    valueLabel.Parent = body
 
-local wsTrack = Instance.new("Frame")
-wsTrack.Name = "WSTrack"
-wsTrack.Size = UDim2.new(1, 0, 0, 8)
-wsTrack.Position = UDim2.new(0, 0, 0, 22)
-wsTrack.BackgroundColor3 = Color3.fromRGB(45, 50, 65)
-Instance.new("UICorner", wsTrack).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", wsTrack).Color = Color3.fromRGB(80, 120, 255)
-wsTrack.Parent = body
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(1, 0, 0, 8)
+    track.Position = UDim2.new(0, 0, 0, yPos + 22)
+    track.BackgroundColor3 = Color3.fromRGB(45, 50, 65)
+    Instance.new("UICorner", track).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", track).Color = Color3.fromRGB(80, 120, 255)
+    track.Parent = body
 
-local wsFill = Instance.new("Frame")
-wsFill.Name = "WSFill"
-wsFill.Size = UDim2.new(0, 0, 1, 0)
-wsFill.BackgroundColor3 = Color3.fromRGB(90, 140, 255)
-Instance.new("UICorner", wsFill).CornerRadius = UDim.new(0, 6)
-wsFill.Parent = wsTrack
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(90, 140, 255)
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 6)
+    fill.Parent = track
 
-local wsKnob = Instance.new("Frame")
-wsKnob.Name = "WSKnob"
-wsKnob.Size = UDim2.fromOffset(16, 16)
-wsKnob.Position = UDim2.new(0, -8, 0.5, -8)
-wsKnob.BackgroundColor3 = Color3.fromRGB(220, 230, 255)
-Instance.new("UICorner", wsKnob).CornerRadius = UDim.new(1, 0)
-Instance.new("UIStroke", wsKnob).Color = Color3.fromRGB(40, 70, 160)
-wsKnob.Parent = wsTrack
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.fromOffset(16, 16)
+    knob.Position = UDim2.new(0, -8, 0.5, -8)
+    knob.BackgroundColor3 = Color3.fromRGB(220, 230, 255)
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+    Instance.new("UIStroke", knob).Color = Color3.fromRGB(40, 70, 160)
+    knob.Parent = track
 
--- ===== Boost Slider =====
-local boostLabel = Instance.new("TextLabel")
-boostLabel.BackgroundTransparency = 1
-boostLabel.Size = UDim2.new(1, 0, 0, 20)
-boostLabel.Position = UDim2.new(0, 0, 0, 38)
-boostLabel.TextXAlignment = Enum.TextXAlignment.Left
-boostLabel.Font = Enum.Font.Gotham
-boostLabel.TextSize = 14
-boostLabel.TextColor3 = Color3.fromRGB(210, 215, 230)
-boostLabel.Text = "Boost"
-boostLabel.Parent = body
+    local dragging = false
+    local currentVal = defaultVal
 
-local boostValue = Instance.new("TextLabel")
-boostValue.BackgroundTransparency = 1
-boostValue.Size = UDim2.new(0, 60, 0, 20)
-boostValue.Position = UDim2.new(1, -60, 0, 38)
-boostValue.TextXAlignment = Enum.TextXAlignment.Right
-boostValue.Font = Enum.Font.GothamMedium
-boostValue.TextSize = 14
-boostValue.TextColor3 = Color3.fromRGB(180, 220, 255)
-boostValue.Text = "0"
-boostValue.Parent = body
+    local function setFromX(x)
+        local absX = math.clamp(x - track.AbsolutePosition.X, 0, track.AbsoluteSize.X)
+        local alpha = absX / track.AbsoluteSize.X
+        local val = math.floor(minVal + alpha * (maxVal - minVal) + 0.5)
+        currentVal = math.clamp(val, minVal, maxVal)
+        valueLabel.Text = tostring(currentVal)
+        fill.Size = UDim2.new(alpha, 0, 1, 0)
+        knob.Position = UDim2.new(alpha, -8, 0.5, -8)
+        if valueChanged then valueChanged(currentVal) end
+    end
 
-local boostTrack = Instance.new("Frame")
-boostTrack.Name = "BoostTrack"
-boostTrack.Size = UDim2.new(1, 0, 0, 8)
-boostTrack.Position = UDim2.new(0, 0, 0, 60)
-boostTrack.BackgroundColor3 = Color3.fromRGB(45, 50, 65)
-Instance.new("UICorner", boostTrack).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", boostTrack).Color = Color3.fromRGB(80, 120, 255)
-boostTrack.Parent = body
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+           input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            setFromX(input.Position.X)
+        end
+    end)
 
-local boostFill = Instance.new("Frame")
-boostFill.Name = "BoostFill"
-boostFill.Size = UDim2.new(0, 0, 1, 0)
-boostFill.BackgroundColor3 = Color3.fromRGB(90, 140, 255)
-Instance.new("UICorner", boostFill).CornerRadius = UDim.new(0, 6)
-boostFill.Parent = boostTrack
+    knob.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+           input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+        end
+    end)
 
-local boostKnob = Instance.new("Frame")
-boostKnob.Name = "BoostKnob"
-boostKnob.Size = UDim2.fromOffset(16, 16)
-boostKnob.Position = UDim2.new(0, -8, 0.5, -8)
-boostKnob.BackgroundColor3 = Color3.fromRGB(220, 230, 255)
-Instance.new("UICorner", boostKnob).CornerRadius = UDim.new(1, 0)
-Instance.new("UIStroke", boostKnob).Color = Color3.fromRGB(40, 70, 160)
-boostKnob.Parent = boostTrack
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or
+                         input.UserInputType == Enum.UserInputType.Touch) then
+            setFromX(input.Position.X)
+        end
+    end)
 
--- ===== Row 1: Inf Jump & Noclip =====
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+           input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    -- Initialize
+    task.wait() -- wait for AbsolutePosition
+    setFromX(track.AbsolutePosition.X + (defaultVal - minVal) / (maxVal - minVal) * track.AbsoluteSize.X)
+
+    return {
+        get = function() return currentVal end,
+        set = function(val)
+            currentVal = math.clamp(val, minVal, maxVal)
+            local alpha = (currentVal - minVal) / (maxVal - minVal)
+            valueLabel.Text = tostring(currentVal)
+            fill.Size = UDim2.new(alpha, 0, 1, 0)
+            knob.Position = UDim2.new(alpha, -8, 0.5, -8)
+        end
+    }
+end
+
+-- Create sliders
+local y = 0
+local wsSlider = createSlider(body, y, "WalkSpeed", 1, 200, 30, function(val) currentWS = val end)
+y = y + 30
+local boostSlider = createSlider(body, y, "Boost", 0, 500, 0, function(val) currentBoost = val end)
+y = y + 30
+local jpSlider = createSlider(body, y, "Jump Power", 1, 200, 50, function(val) currentJP = val end)
+y = y + 30
+local boostJPSlider = createSlider(body, y, "Boost Jump", 0, 500, 0, function(val) currentBoostJP = val end)
+y = y + 30
+
+-- Row1: Inf Jump & Noclip
 local row1 = Instance.new("Frame")
 row1.Size = UDim2.new(1, 0, 0, 22)
-row1.Position = UDim2.new(0, 0, 0, 78)
+row1.Position = UDim2.new(0, 0, 0, y)
 row1.BackgroundTransparency = 1
 row1.Parent = body
 
@@ -278,10 +300,11 @@ end
 local infJumpBtn = makeToggle("InfJumpBtn", "Inf Jump", 100)
 local noclipBtn  = makeToggle("NoclipBtn" , "Noclip", 100)
 
--- ===== Row 2: Fly UI & TP UI =====
+y = y + 22 + 8  -- row height + spacing
+-- Row2: Fly UI & TP UI
 local row2 = Instance.new("Frame")
 row2.Size = UDim2.new(1, 0, 0, 22)
-row2.Position = UDim2.new(0, 0, 0, 108) -- 78+22+8
+row2.Position = UDim2.new(0, 0, 0, y)
 row2.BackgroundTransparency = 1
 row2.Parent = body
 
@@ -293,8 +316,6 @@ layout2.VerticalAlignment = Enum.VerticalAlignment.Center
 
 local flyUIBtn   = makeToggle("FlyUIBtn"  , "Fly UI", 100)
 local tpUIBtn    = makeToggle("TPUIBtn"   , "TP UI", 100)
-
--- (Credit dihapus sesuai permintaan)
 
 -- Shoe icon minimized button (for main menu)
 local shoe = Instance.new("TextButton")
@@ -315,92 +336,6 @@ shoe.Parent = gui
 makeDraggable(panel, titleBar)
 makeDraggable(shoe, shoe)
 
--- ===== Slider Logic =====
-local MIN_WS = 1
-local MAX_WS = 200
-local MIN_BOOST = 0
-local MAX_BOOST = 500
-local currentWS = MIN_WS
-local currentBoost = MIN_BOOST
-
-local draggingWS = false
-local draggingBoost = false
-
--- WS slider
-local function setWSFromX(x)
-    local absX = math.clamp(x - wsTrack.AbsolutePosition.X, 0, wsTrack.AbsoluteSize.X)
-    local alpha = absX / wsTrack.AbsoluteSize.X
-    local val = math.floor(MIN_WS + alpha * (MAX_WS - MIN_WS) + 0.5)
-    currentWS = math.clamp(val, MIN_WS, MAX_WS)
-    wsValue.Text = tostring(currentWS)
-    wsFill.Size = UDim2.new(alpha, 0, 1, 0)
-    wsKnob.Position = UDim2.new(alpha, -8, 0.5, -8)
-end
-
-wsTrack.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or
-       input.UserInputType == Enum.UserInputType.Touch then
-        draggingWS = true
-        setWSFromX(input.Position.X)
-    end
-end)
-
-wsKnob.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or
-       input.UserInputType == Enum.UserInputType.Touch then
-        draggingWS = true
-    end
-end)
-
--- Boost slider
-local function setBoostFromX(x)
-    local absX = math.clamp(x - boostTrack.AbsolutePosition.X, 0, boostTrack.AbsoluteSize.X)
-    local alpha = absX / boostTrack.AbsoluteSize.X
-    local val = math.floor(MIN_BOOST + alpha * (MAX_BOOST - MIN_BOOST) + 0.5)
-    currentBoost = math.clamp(val, MIN_BOOST, MAX_BOOST)
-    boostValue.Text = tostring(currentBoost)
-    boostFill.Size = UDim2.new(alpha, 0, 1, 0)
-    boostKnob.Position = UDim2.new(alpha, -8, 0.5, -8)
-end
-
-boostTrack.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or
-       input.UserInputType == Enum.UserInputType.Touch then
-        draggingBoost = true
-        setBoostFromX(input.Position.X)
-    end
-end)
-
-boostKnob.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or
-       input.UserInputType == Enum.UserInputType.Touch then
-        draggingBoost = true
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if draggingWS and (input.UserInputType == Enum.UserInputType.MouseMovement or
-                       input.UserInputType == Enum.UserInputType.Touch) then
-        setWSFromX(input.Position.X)
-    end
-    if draggingBoost and (input.UserInputType == Enum.UserInputType.MouseMovement or
-                          input.UserInputType == Enum.UserInputType.Touch) then
-        setBoostFromX(input.Position.X)
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or
-       input.UserInputType == Enum.UserInputType.Touch then
-        draggingWS = false
-        draggingBoost = false
-    end
-end)
-
--- Initialize sliders
-setWSFromX(wsTrack.AbsolutePosition.X)
-setBoostFromX(boostTrack.AbsolutePosition.X)
-
 -- Minimize and close for main menu
 minBtn.MouseButton1Click:Connect(function()
     panel.Visible = false
@@ -418,6 +353,11 @@ local infJumpEnabled = false
 local noclipEnabled = false
 local flyUIVisible = false
 local tpUIVisible = false
+
+local currentWS = 30
+local currentBoost = 0
+local currentJP = 50
+local currentBoostJP = 0
 
 -- Toggle helpers
 local function setToggle(btn, enabled)
@@ -455,7 +395,7 @@ local function createFlyUI()
     flyFrame.Parent = flyGui
     flyFrame.Visible = false
 
-    -- Buttons
+    -- Buttons (same as before)
     local up = Instance.new("TextButton")
     up.Name = "up"
     up.Parent = flyFrame
@@ -576,7 +516,7 @@ local function createFlyUI()
     local tpwalking = false
     local speaker = player
 
-    -- Functionality
+    -- Functionality (same as before)
     onof.MouseButton1Click:Connect(function()
         if nowe == true then
             nowe = false
@@ -871,14 +811,30 @@ local function createTeleportUI()
     tpGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     tpGui.Parent = CoreGui
 
-    -- Main Teleport Panel
+    -- Minimized button for TP UI (text "TP")
+    local tpMinimized = Instance.new("TextButton")
+    tpMinimized.Name = "TPMinimized"
+    tpMinimized.Visible = false
+    tpMinimized.Text = "TP"
+    tpMinimized.Font = Enum.Font.GothamBold
+    tpMinimized.TextSize = 16
+    tpMinimized.Size = UDim2.fromOffset(40, 40)
+    tpMinimized.Position = UDim2.new(0.6, -20, 0.45, -20)
+    tpMinimized.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+    tpMinimized.TextColor3 = Color3.fromRGB(220, 230, 255)
+    Instance.new("UICorner", tpMinimized).CornerRadius = UDim.new(1, 0)
+    Instance.new("UIStroke", tpMinimized).Color = Color3.fromRGB(80, 120, 255)
+    tpMinimized.Parent = tpGui
+    makeDraggable(tpMinimized, tpMinimized)
+
+    -- Main Teleport Panel (height increased to 370)
     local mainPanel = Instance.new("Frame")
     mainPanel.Name = "TeleportPanel"
-    mainPanel.Size = UDim2.fromOffset(350, 300)
-    mainPanel.Position = UDim2.new(0.5, -175, 0.3, -150)
+    mainPanel.Size = UDim2.fromOffset(350, 370)
+    mainPanel.Position = UDim2.new(0.5, -175, 0.3, -185)
     mainPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
     mainPanel.Parent = tpGui
-    mainPanel.Visible = false  -- start hidden
+    mainPanel.Visible = false
     makeDraggable(mainPanel, mainPanel)
 
     local corner = Instance.new("UICorner", mainPanel)
@@ -900,13 +856,35 @@ local function createTeleportUI()
     title.Size = UDim2.new(1, -90, 1, 0)
     title.Position = UDim2.new(0, 12, 0, 0)
     title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Font = Enum.Font.GothamSemibold
+    title.Font = Enum.Font.GothamBold  -- BOLD
     title.TextSize = 16
     title.TextColor3 = Color3.fromRGB(230, 235, 255)
     title.Text = "Teleport Menu"
     title.Parent = titleBar
 
-    -- Close button for main panel (X) - hanya sembunyikan panel dan matikan toggle
+    -- Minimize button for TP UI
+    local tpMinBtn = Instance.new("TextButton")
+    tpMinBtn.Name = "Minimize"
+    tpMinBtn.Size = UDim2.fromOffset(36, 24)
+    tpMinBtn.Position = UDim2.new(1, -84, 0.5, -12)
+    tpMinBtn.Text = "—"
+    tpMinBtn.Font = Enum.Font.GothamBold
+    tpMinBtn.TextSize = 20
+    tpMinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+    tpMinBtn.TextColor3 = Color3.fromRGB(200, 205, 220)
+    Instance.new("UICorner", tpMinBtn).CornerRadius = UDim.new(0, 8)
+    tpMinBtn.Parent = titleBar
+    tpMinBtn.MouseButton1Click:Connect(function()
+        mainPanel.Visible = false
+        tpMinimized.Visible = true
+    end)
+
+    tpMinimized.MouseButton1Click:Connect(function()
+        tpMinimized.Visible = false
+        mainPanel.Visible = true
+    end)
+
+    -- Close button for main panel
     local closeTP = Instance.new("TextButton")
     closeTP.Size = UDim2.fromOffset(36, 24)
     closeTP.Position = UDim2.new(1, -44, 0.5, -12)
@@ -920,6 +898,7 @@ local function createTeleportUI()
     closeTP.MouseButton1Click:Connect(function()
         tpUIVisible = false
         mainPanel.Visible = false
+        tpMinimized.Visible = false
         setToggle(tpUIBtn, false)
     end)
 
@@ -955,9 +934,9 @@ local function createTeleportUI()
     savedLabel.TextXAlignment = Enum.TextXAlignment.Left
     savedLabel.Parent = body
 
-    -- Container untuk list teleport (scrolling frame)
+    -- Container untuk list teleport (scrolling frame) - lebih tinggi
     local listContainer = Instance.new("ScrollingFrame")
-    listContainer.Size = UDim2.new(1, 0, 0, 150)
+    listContainer.Size = UDim2.new(1, 0, 0, 200)  -- tinggi 200
     listContainer.Position = UDim2.new(0, 0, 0, 85)
     listContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
     listContainer.BorderSizePixel = 0
@@ -970,10 +949,10 @@ local function createTeleportUI()
     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
     listLayout.Padding = UDim.new(0, 5)
 
-    -- Pagination frame
+    -- Pagination frame (di bawah list)
     local pageFrame = Instance.new("Frame")
     pageFrame.Size = UDim2.new(1, 0, 0, 30)
-    pageFrame.Position = UDim2.new(0, 0, 1, -35)
+    pageFrame.Position = UDim2.new(0, 0, 0, 290)  -- 85+200+5
     pageFrame.BackgroundTransparency = 1
     pageFrame.Parent = body
 
@@ -1014,7 +993,7 @@ local function createTeleportUI()
             itemFrame.Parent = listContainer
 
             local nameLabel = Instance.new("TextLabel")
-            nameLabel.Size = UDim2.new(0.5, -5, 1, 0)
+            nameLabel.Size = UDim2.new(0.4, -5, 1, 0)
             nameLabel.Position = UDim2.new(0, 5, 0, 0)
             nameLabel.BackgroundTransparency = 1
             nameLabel.Text = data.name
@@ -1026,7 +1005,7 @@ local function createTeleportUI()
 
             local tpBtn = Instance.new("TextButton")
             tpBtn.Size = UDim2.new(0, 70, 0, 30)
-            tpBtn.Position = UDim2.new(0.5, -35, 0.5, -15)
+            tpBtn.Position = UDim2.new(0.4, 5, 0.5, -15)
             tpBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
             tpBtn.Text = "Teleport"
             tpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1041,6 +1020,20 @@ local function createTeleportUI()
                         char.HumanoidRootPart.CFrame = CFrame.new(data.pos)
                     end
                 end
+            end)
+
+            local setBtn = Instance.new("TextButton")
+            setBtn.Size = UDim2.new(0, 50, 0, 30)
+            setBtn.Position = UDim2.new(0.4 + 70/350 + 0.05, 0, 0.5, -15)  -- perkiraan
+            setBtn.BackgroundColor3 = Color3.fromRGB(200, 160, 60)
+            setBtn.Text = "Seting"
+            setBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            setBtn.Font = Enum.Font.GothamMedium
+            setBtn.TextSize = 12
+            Instance.new("UICorner", setBtn).CornerRadius = UDim.new(0, 6)
+            setBtn.Parent = itemFrame
+            setBtn.MouseButton1Click:Connect(function()
+                openSettingPanel(data, i)
             end)
 
             local delBtn = Instance.new("TextButton")
@@ -1134,7 +1127,6 @@ local function createTeleportUI()
     nameBox.ClearTextOnFocus = false
     Instance.new("UICorner", nameBox).CornerRadius = UDim.new(0, 8)
     nameBox.Parent = saveSubPanel
-    -- Batasi panjang teks
     nameBox.FocusLost:Connect(function()
         if #nameBox.Text > 20 then
             nameBox.Text = nameBox.Text:sub(1, 20)
@@ -1159,13 +1151,18 @@ local function createTeleportUI()
     saveBtn.Parent = saveSubPanel
     saveBtn.MouseButton1Click:Connect(function()
         local name = nameBox.Text
-        if name == "" then name = "Unnamed" end
+        if name == "" then
+            -- Auto-generate name: Teleport [angka]
+            local count = #_G.AzkaTeleports + 1
+            name = "Teleport " .. count
+        end
         local pos = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position
         if pos then
             table.insert(_G.AzkaTeleports, {name = name, pos = pos})
             refreshList()
             saveSubPanel.Visible = false
             mainPanel.Visible = true
+            nameBox.Text = ""  -- reset
         end
     end)
 
@@ -1183,11 +1180,97 @@ local function createTeleportUI()
     closeSubBtn.MouseButton1Click:Connect(function()
         saveSubPanel.Visible = false
         mainPanel.Visible = true
+        nameBox.Text = ""  -- reset
+    end)
+
+    -- Sub-panel Setting (edit nama)
+    local settingPanel = Instance.new("Frame")
+    settingPanel.Name = "SettingPanel"
+    settingPanel.Size = UDim2.fromOffset(300, 160)
+    settingPanel.Position = UDim2.new(0.5, -150, 0.5, -80)
+    settingPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+    settingPanel.Parent = tpGui
+    settingPanel.Visible = false
+    makeDraggable(settingPanel, settingPanel)
+
+    local setCorner = Instance.new("UICorner", settingPanel)
+    setCorner.CornerRadius = UDim.new(0, 12)
+    local setStroke = Instance.new("UIStroke", settingPanel)
+    setStroke.Color = Color3.fromRGB(80, 120, 255)
+
+    local setTitle = Instance.new("TextLabel")
+    setTitle.Size = UDim2.new(1, 0, 0, 40)
+    setTitle.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+    setTitle.Text = "Edit Teleport"
+    setTitle.TextColor3 = Color3.fromRGB(230, 235, 255)
+    setTitle.Font = Enum.Font.GothamBold
+    setTitle.TextSize = 18
+    Instance.new("UICorner", setTitle).CornerRadius = UDim.new(0, 12)
+    setTitle.Parent = settingPanel
+
+    local setNameBox = Instance.new("TextBox")
+    setNameBox.Size = UDim2.new(1, -20, 0, 36)
+    setNameBox.Position = UDim2.new(0, 10, 0, 50)
+    setNameBox.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+    setNameBox.PlaceholderText = "Nama Baru"
+    setNameBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+    setNameBox.Text = ""
+    setNameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    setNameBox.Font = Enum.Font.Gotham
+    setNameBox.TextSize = 14
+    Instance.new("UICorner", setNameBox).CornerRadius = UDim.new(0, 8)
+    setNameBox.Parent = settingPanel
+
+    local setSaveBtn = Instance.new("TextButton")
+    setSaveBtn.Size = UDim2.new(0, 100, 0, 40)
+    setSaveBtn.Position = UDim2.new(0.5, -110, 0, 100)
+    setSaveBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+    setSaveBtn.Text = "Save"
+    setSaveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    setSaveBtn.Font = Enum.Font.GothamBold
+    setSaveBtn.TextSize = 16
+    Instance.new("UICorner", setSaveBtn).CornerRadius = UDim.new(0, 8)
+    setSaveBtn.Parent = settingPanel
+
+    local setCloseBtn = Instance.new("TextButton")
+    setCloseBtn.Size = UDim2.new(0, 100, 0, 40)
+    setCloseBtn.Position = UDim2.new(0.5, 10, 0, 100)
+    setCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    setCloseBtn.Text = "Cancel"
+    setCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    setCloseBtn.Font = Enum.Font.GothamBold
+    setCloseBtn.TextSize = 16
+    Instance.new("UICorner", setCloseBtn).CornerRadius = UDim.new(0, 8)
+    setCloseBtn.Parent = settingPanel
+
+    local currentEditIndex
+    local function openSettingPanel(data, idx)
+        currentEditIndex = idx
+        setNameBox.Text = data.name
+        mainPanel.Visible = false
+        settingPanel.Visible = true
+    end
+
+    setSaveBtn.MouseButton1Click:Connect(function()
+        local newName = setNameBox.Text
+        if newName == "" then
+            newName = "Unnamed"
+        end
+        if currentEditIndex and _G.AzkaTeleports[currentEditIndex] then
+            _G.AzkaTeleports[currentEditIndex].name = newName
+            refreshList()
+        end
+        settingPanel.Visible = false
+        mainPanel.Visible = true
+    end)
+
+    setCloseBtn.MouseButton1Click:Connect(function()
+        settingPanel.Visible = false
+        mainPanel.Visible = true
     end)
 
     -- Tombol Save Teleport di main panel
     saveTPBtn.MouseButton1Click:Connect(function()
-        -- Update koordinat saat ini
         local pos = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position
         if pos then
             coordLabel.Text = string.format("Position: %.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z)
@@ -1209,6 +1292,11 @@ local tpGui, tpPanel = createTeleportUI()
 tpUIBtn.MouseButton1Click:Connect(function()
     tpUIVisible = not tpUIVisible
     tpPanel.Visible = tpUIVisible
+    -- also hide minimized button if main panel is shown
+    if tpUIVisible then
+        local tpMin = tpGui:FindFirstChild("TPMinimized")
+        if tpMin then tpMin.Visible = false end
+    end
     setToggle(tpUIBtn, tpUIVisible)
 end)
 
@@ -1216,7 +1304,6 @@ end)
 closeBtn.MouseButton1Click:Connect(function()
     running = false
     gui:Destroy()
-    -- Kita tidak destroy fly/tp GUI, biarkan pengguna menutup sendiri
 end)
 
 -- ===== WalkSpeed enforcer (WS + Boost) =====
@@ -1228,6 +1315,22 @@ task.spawn(function()
     while running do
         if hum and hum.Parent then
             hum.WalkSpeed = currentWS + currentBoost
+        else
+            hum = waitForHumanoid()
+        end
+        task.wait(0.01)
+    end
+end)
+
+-- Jump Power enforcer
+task.spawn(function()
+    local hum = waitForHumanoid()
+    player.CharacterAdded:Connect(function()
+        hum = waitForHumanoid()
+    end)
+    while running do
+        if hum and hum.Parent then
+            hum.JumpPower = currentJP + currentBoostJP
         else
             hum = waitForHumanoid()
         end
