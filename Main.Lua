@@ -1,6 +1,6 @@
 --[[
     Azka UI - Custom UI seperti Kavo untuk Delta Executor
-    Fitur: Drag, Minimize (emoji), Close, Menu Slide dengan konten WalkSpeed, Inf Jump, Noclip
+    Versi Instance (ScreenGui) dengan fitur lengkap
     Dibuat oleh Azka
 ]]
 
@@ -8,646 +8,537 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-
-if not Drawing or not UserInputService then
-    warn("Drawing atau UserInputService tidak tersedia. Pastikan menggunakan executor yang mendukung.")
-    return
-end
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 
--- Variabel global untuk menyimpan state UI dan mencegah duplikasi
+-- Hapus UI lama jika ada
+local existingGui = CoreGui:FindFirstChild("AzkaUI")
+if existingGui then
+    existingGui:Destroy()
+end
+
+-- Variabel global untuk kontrol (opsional)
 _G.AzkaUI = _G.AzkaUI or {}
 if _G.AzkaUI.Cleanup then
     _G.AzkaUI.Cleanup()
 end
 
--- State window
-local winX, winY = 200, 100
-local winW, winH = 600, 450
+-- =============================================
+--              PEMBUATAN GUI
+-- =============================================
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "AzkaUI"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = CoreGui
+
+-- Frame utama (panel)
+local panel = Instance.new("Frame")
+panel.Name = "Panel"
+panel.Size = UDim2.fromOffset(600, 450)
+panel.Position = UDim2.new(0.5, -300, 0.4, -225)
+panel.BackgroundColor3 = Color3.fromRGB(20, 20, 25) -- solid gelap
+panel.BorderSizePixel = 0
+panel.Parent = gui
+
+local panelCorner = Instance.new("UICorner")
+panelCorner.CornerRadius = UDim.new(0, 12)
+panelCorner.Parent = panel
+
+local panelStroke = Instance.new("UIStroke")
+panelStroke.Thickness = 2
+panelStroke.Color = Color3.fromRGB(80, 120, 255)
+panelStroke.Transparency = 0
+panelStroke.Parent = panel
+
+-- Title bar
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 36)
+titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = panel
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = titleBar
+
+-- Judul
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.BackgroundTransparency = 1
+titleLabel.Size = UDim2.new(1, -90, 1, 0)
+titleLabel.Position = UDim2.new(0, 12, 0, 0)
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 18
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "Script BY Azka"
+titleLabel.Parent = titleBar
+
+-- Tombol Close (X)
+local closeBtn = Instance.new("TextButton")
+closeBtn.Name = "Close"
+closeBtn.Size = UDim2.fromOffset(30, 24)
+closeBtn.Position = UDim2.new(1, -70, 0.5, -12)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.AutoButtonColor = false
+closeBtn.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeBtn
+
+-- Tombol Minimize (-)
+local minBtn = Instance.new("TextButton")
+minBtn.Name = "Minimize"
+minBtn.Size = UDim2.fromOffset(30, 24)
+minBtn.Position = UDim2.new(1, -36, 0.5, -12)
+minBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 180)
+minBtn.Text = "-"
+minBtn.Font = Enum.Font.GothamBold
+minBtn.TextSize = 20
+minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minBtn.AutoButtonColor = false
+minBtn.Parent = titleBar
+
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 8)
+minCorner.Parent = minBtn
+
+-- Panel kiri (menu)
+local leftPanel = Instance.new("Frame")
+leftPanel.Name = "LeftPanel"
+leftPanel.Size = UDim2.fromOffset(130, 380)
+leftPanel.Position = UDim2.fromOffset(10, 46)
+leftPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+leftPanel.BorderSizePixel = 0
+leftPanel.Parent = panel
+
+local leftCorner = Instance.new("UICorner")
+leftCorner.CornerRadius = UDim.new(0, 10)
+leftCorner.Parent = leftPanel
+
+-- Tombol menu Main
+local mainBtn = Instance.new("TextButton")
+mainBtn.Name = "MainBtn"
+mainBtn.Size = UDim2.new(1, -20, 0, 40)
+mainBtn.Position = UDim2.fromOffset(10, 10)
+mainBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+mainBtn.Text = "Main"
+mainBtn.Font = Enum.Font.GothamBold
+mainBtn.TextSize = 16
+mainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+mainBtn.AutoButtonColor = false
+mainBtn.Parent = leftPanel
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 8)
+mainCorner.Parent = mainBtn
+
+-- Tombol menu Teleport
+local tpBtn = Instance.new("TextButton")
+tpBtn.Name = "TeleportBtn"
+tpBtn.Size = UDim2.new(1, -20, 0, 40)
+tpBtn.Position = UDim2.fromOffset(10, 60)
+tpBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+tpBtn.Text = "Teleport"
+tpBtn.Font = Enum.Font.GothamBold
+tpBtn.TextSize = 16
+tpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+tpBtn.AutoButtonColor = false
+tpBtn.Parent = leftPanel
+
+local tpCorner = Instance.new("UICorner")
+tpCorner.CornerRadius = UDim.new(0, 8)
+tpCorner.Parent = tpBtn
+
+-- Tombol menu Setting
+local settingBtn = Instance.new("TextButton")
+settingBtn.Name = "SettingBtn"
+settingBtn.Size = UDim2.new(1, -20, 0, 40)
+settingBtn.Position = UDim2.fromOffset(10, 110)
+settingBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+settingBtn.Text = "Setting"
+settingBtn.Font = Enum.Font.GothamBold
+settingBtn.TextSize = 16
+settingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+settingBtn.AutoButtonColor = false
+settingBtn.Parent = leftPanel
+
+local settingCorner = Instance.new("UICorner")
+settingCorner.CornerRadius = UDim.new(0, 8)
+settingCorner.Parent = settingBtn
+
+-- Garis pemisah vertikal
+local divider = Instance.new("Frame")
+divider.Name = "Divider"
+divider.Size = UDim2.fromOffset(2, 350)
+divider.Position = UDim2.fromOffset(145, 50)
+divider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+divider.BorderSizePixel = 0
+divider.Parent = panel
+
+-- Panel konten kanan
+local contentPanel = Instance.new("Frame")
+contentPanel.Name = "ContentPanel"
+contentPanel.Size = UDim2.fromOffset(430, 380)
+contentPanel.Position = UDim2.fromOffset(155, 46)
+contentPanel.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+contentPanel.BorderSizePixel = 0
+contentPanel.Parent = panel
+
+local contentCorner = Instance.new("UICorner")
+contentCorner.CornerRadius = UDim.new(0, 10)
+contentCorner.Parent = contentPanel
+
+-- Konten untuk menu Main (akan diisi nanti)
+local mainContent = Instance.new("Frame")
+mainContent.Name = "MainContent"
+mainContent.Size = UDim2.new(1, -20, 1, -20)
+mainContent.Position = UDim2.fromOffset(10, 10)
+mainContent.BackgroundTransparency = 1
+mainContent.Visible = true
+mainContent.Parent = contentPanel
+
+-- Konten untuk menu Teleport (placeholder)
+local tpContent = Instance.new("Frame")
+tpContent.Name = "TeleportContent"
+tpContent.Size = UDim2.new(1, -20, 1, -20)
+tpContent.Position = UDim2.fromOffset(10, 10)
+tpContent.BackgroundTransparency = 1
+tpContent.Visible = false
+tpContent.Parent = contentPanel
+
+local tpPlaceholder = Instance.new("TextLabel")
+tpPlaceholder.Size = UDim2.new(1, 0, 1, 0)
+tpPlaceholder.BackgroundTransparency = 1
+tpPlaceholder.Text = "Menu Teleport\n(Coming Soon)"
+tpPlaceholder.TextColor3 = Color3.fromRGB(200, 200, 200)
+tpPlaceholder.Font = Enum.Font.GothamBold
+tpPlaceholder.TextSize = 18
+tpPlaceholder.TextWrapped = true
+tpPlaceholder.Parent = tpContent
+
+-- Konten untuk menu Setting (placeholder)
+local settingContent = Instance.new("Frame")
+settingContent.Name = "SettingContent"
+settingContent.Size = UDim2.new(1, -20, 1, -20)
+settingContent.Position = UDim2.fromOffset(10, 10)
+settingContent.BackgroundTransparency = 1
+settingContent.Visible = false
+settingContent.Parent = contentPanel
+
+local settingPlaceholder = Instance.new("TextLabel")
+settingPlaceholder.Size = UDim2.new(1, 0, 1, 0)
+settingPlaceholder.BackgroundTransparency = 1
+settingPlaceholder.Text = "Menu Setting\n(Coming Soon)"
+settingPlaceholder.TextColor3 = Color3.fromRGB(200, 200, 200)
+settingPlaceholder.Font = Enum.Font.GothamBold
+settingPlaceholder.TextSize = 18
+settingPlaceholder.TextWrapped = true
+settingPlaceholder.Parent = settingContent
+
+-- =============================================
+--       KONTEN UNTUK MENU MAIN
+-- =============================================
+
+-- Label WalkSpeed
+local wsLabel = Instance.new("TextLabel")
+wsLabel.Name = "WSLabel"
+wsLabel.Size = UDim2.fromOffset(100, 30)
+wsLabel.Position = UDim2.fromOffset(10, 10)
+wsLabel.BackgroundTransparency = 1
+wsLabel.Text = "WalkSpeed"
+wsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+wsLabel.Font = Enum.Font.GothamBold
+wsLabel.TextSize = 18
+wsLabel.TextXAlignment = Enum.TextXAlignment.Left
+wsLabel.Parent = mainContent
+
+-- Label nilai
+local wsValue = Instance.new("TextLabel")
+wsValue.Name = "WSValue"
+wsValue.Size = UDim2.fromOffset(60, 30)
+wsValue.Position = UDim2.fromOffset(350, 10)
+wsValue.BackgroundTransparency = 1
+wsValue.Text = "30"
+wsValue.TextColor3 = Color3.fromRGB(100, 200, 255)
+wsValue.Font = Enum.Font.GothamBold
+wsValue.TextSize = 18
+wsValue.TextXAlignment = Enum.TextXAlignment.Right
+wsValue.Parent = mainContent
+
+-- Slider track
+local sliderTrack = Instance.new("Frame")
+sliderTrack.Name = "SliderTrack"
+sliderTrack.Size = UDim2.fromOffset(380, 8)
+sliderTrack.Position = UDim2.fromOffset(10, 50)
+sliderTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+sliderTrack.BorderSizePixel = 0
+sliderTrack.Parent = mainContent
+
+local trackCorner = Instance.new("UICorner")
+trackCorner.CornerRadius = UDim.new(0, 4)
+trackCorner.Parent = sliderTrack
+
+-- Slider fill
+local sliderFill = Instance.new("Frame")
+sliderFill.Name = "SliderFill"
+sliderFill.Size = UDim2.fromOffset(0, 8)
+sliderFill.BackgroundColor3 = Color3.fromRGB(80, 140, 255)
+sliderFill.BorderSizePixel = 0
+sliderFill.Parent = sliderTrack
+
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(0, 4)
+fillCorner.Parent = sliderFill
+
+-- Slider knob (bulat)
+local sliderKnob = Instance.new("ImageButton")
+sliderKnob.Name = "SliderKnob"
+sliderKnob.Size = UDim2.fromOffset(18, 18)
+sliderKnob.Position = UDim2.fromOffset(-9, -5)
+sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sliderKnob.BackgroundTransparency = 1
+sliderKnob.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png" -- lingkaran putih
+sliderKnob.ImageColor3 = Color3.fromRGB(255, 255, 255)
+sliderKnob.ImageTransparency = 0
+sliderKnob.Parent = sliderTrack
+
+-- Tombol Inf Jump
+local infJumpBtn = Instance.new("TextButton")
+infJumpBtn.Name = "InfJumpBtn"
+infJumpBtn.Size = UDim2.fromOffset(160, 40)
+infJumpBtn.Position = UDim2.fromOffset(10, 80)
+infJumpBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+infJumpBtn.Text = "Inf Jump: OFF"
+infJumpBtn.Font = Enum.Font.GothamBold
+infJumpBtn.TextSize = 16
+infJumpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+infJumpBtn.AutoButtonColor = false
+infJumpBtn.Parent = mainContent
+
+local infCorner = Instance.new("UICorner")
+infCorner.CornerRadius = UDim.new(0, 8)
+infCorner.Parent = infJumpBtn
+
+-- Tombol Noclip
+local noclipBtn = Instance.new("TextButton")
+noclipBtn.Name = "NoclipBtn"
+noclipBtn.Size = UDim2.fromOffset(160, 40)
+noclipBtn.Position = UDim2.fromOffset(190, 80)
+noclipBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+noclipBtn.Text = "Noclip: OFF"
+noclipBtn.Font = Enum.Font.GothamBold
+noclipBtn.TextSize = 16
+noclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+noclipBtn.AutoButtonColor = false
+noclipBtn.Parent = mainContent
+
+local noclipCorner = Instance.new("UICorner")
+noclipCorner.CornerRadius = UDim.new(0, 8)
+noclipCorner.Parent = noclipBtn
+
+-- =============================================
+--      FRAME MINIMIZE (kotak emoji)
+-- =============================================
+local minimizeFrame = Instance.new("Frame")
+minimizeFrame.Name = "MinimizeFrame"
+minimizeFrame.Size = UDim2.fromOffset(200, 100)
+minimizeFrame.Position = panel.Position -- ikuti posisi panel awal
+minimizeFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+minimizeFrame.Visible = false
+minimizeFrame.Parent = gui
+
+local minFrameCorner = Instance.new("UICorner")
+minFrameCorner.CornerRadius = UDim.new(0, 12)
+minFrameCorner.Parent = minimizeFrame
+
+local minFrameStroke = Instance.new("UIStroke")
+minFrameStroke.Thickness = 2
+minFrameStroke.Color = Color3.fromRGB(80, 120, 255)
+minFrameStroke.Parent = minimizeFrame
+
+local emojiLabel = Instance.new("TextLabel")
+emojiLabel.Name = "Emoji"
+emojiLabel.Size = UDim2.new(1, 0, 1, 0)
+emojiLabel.BackgroundTransparency = 1
+emojiLabel.Text = "✌︎㋡"
+emojiLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+emojiLabel.Font = Enum.Font.GothamBold
+emojiLabel.TextSize = 40
+emojiLabel.Parent = minimizeFrame
+
+-- =============================================
+--              FUNGSI-FUNGSI
+-- =============================================
+
+-- Variabel state
 local isMinimized = false
-local isDragging = false
-local dragOffsetX, dragOffsetY
-local currentMenu = 1 -- 1: Main, 2: Teleport, 3: Setting
-
--- Ukuran minimize
-local minW, minH = 200, 100
-
--- Tabel untuk menyimpan semua drawing objects
-local objects = {}
-local buttons = {} -- untuk deteksi klik
-
--- Variabel fitur
-local currentWS = 30
-local MIN_WS = 30
-local MAX_WS = 100
+local currentMenu = "Main" -- Main, Teleport, Setting
+local wsValueNum = 30
+local minWS = 30
+local maxWS = 100
 local infJumpEnabled = false
 local noclipEnabled = false
 local draggingSlider = false
+local draggingWindow = false
+local dragOffset = Vector2.new()
 
--- Fungsi untuk membersihkan semua objek dan event
-local function Cleanup()
-    for _, obj in ipairs(objects) do
-        pcall(function() obj:Remove() end)
-    end
-    objects = {}
-    buttons = {}
-    if _G.AzkaUI.Connections then
-        for _, conn in ipairs(_G.AzkaUI.Connections) do
-            pcall(function() conn:Disconnect() end)
-        end
-    end
-    _G.AzkaUI = nil
+-- Fungsi untuk mengganti menu
+local function setMenu(menu)
+    currentMenu = menu
+    mainContent.Visible = (menu == "Main")
+    tpContent.Visible = (menu == "Teleport")
+    settingContent.Visible = (menu == "Setting")
+    
+    -- Ubah warna tombol menu (opsional)
+    mainBtn.BackgroundColor3 = (menu == "Main") and Color3.fromRGB(70, 100, 200) or Color3.fromRGB(50, 50, 60)
+    tpBtn.BackgroundColor3 = (menu == "Teleport") and Color3.fromRGB(70, 100, 200) or Color3.fromRGB(50, 50, 60)
+    settingBtn.BackgroundColor3 = (menu == "Setting") and Color3.fromRGB(70, 100, 200) or Color3.fromRGB(50, 50, 60)
 end
 
--- Fungsi untuk membuat objek Drawing dengan properti dasar
-local function NewDrawing(objType, props)
-    local obj = Drawing.new(objType)
-    for k, v in pairs(props) do
-        obj[k] = v
-    end
-    table.insert(objects, obj)
-    return obj
-end
-
--- Fungsi untuk membuat tombol (area klik)
-local function NewButton(areaObj, callback)
-    table.insert(buttons, {area = areaObj, callback = callback})
-end
-
--- Fungsi untuk memperbarui posisi semua objek berdasarkan winX, winY
-local function UpdatePositions()
-    -- Background utama (solid)
-    objects.bg.Position = Vector2.new(winX, winY)
-    objects.bg.Size = Vector2.new(winW, winH)
-
-    -- Title bar (untuk drag)
-    objects.titleBar.Position = Vector2.new(winX, winY)
-    objects.titleBar.Size = Vector2.new(winW, 30)
-
-    -- Title text (Bold)
-    objects.titleText.Position = Vector2.new(winX + 10, winY + 5)
-
-    -- Tombol Close (X)
-    objects.closeBtn.Position = Vector2.new(winX + winW - 40, winY + 5)
-    objects.closeBtn.Size = Vector2.new(25, 20)
-    objects.closeText.Position = Vector2.new(winX + winW - 33, winY + 5)
-
-    -- Tombol Minimize (-)
-    objects.minBtn.Position = Vector2.new(winX + winW - 70, winY + 5)
-    objects.minBtn.Size = Vector2.new(25, 20)
-    objects.minText.Position = Vector2.new(winX + winW - 63, winY + 5)
-
-    -- Panel kiri (background menu)
-    objects.leftPanel.Position = Vector2.new(winX + 5, winY + 35)
-    objects.leftPanel.Size = Vector2.new(125, winH - 70)
-
-    -- Menu buttons (di dalam panel kiri)
-    local btnX = winX + 15
-    local btnW = 105
-    local btnH = 40
-    local spacing = 10
-    local firstY = winY + 45
-
-    objects.mainBtn.Position = Vector2.new(btnX, firstY)
-    objects.mainBtn.Size = Vector2.new(btnW, btnH)
-    objects.mainText.Position = Vector2.new(btnX + 10, firstY + 10)
-
-    objects.tpBtn.Position = Vector2.new(btnX, firstY + btnH + spacing)
-    objects.tpBtn.Size = Vector2.new(btnW, btnH)
-    objects.tpText.Position = Vector2.new(btnX + 10, firstY + btnH + spacing + 10)
-
-    objects.settingBtn.Position = Vector2.new(btnX, firstY + 2 * (btnH + spacing))
-    objects.settingBtn.Size = Vector2.new(btnW, btnH)
-    objects.settingText.Position = Vector2.new(btnX + 10, firstY + 2 * (btnH + spacing) + 10)
-
-    -- Garis pemisah vertikal (batas antara menu dan konten)
-    objects.divider.Visible = not isMinimized
-    if not isMinimized then
-        objects.divider.From = Vector2.new(winX + 135, winY + 35)
-        objects.divider.To = Vector2.new(winX + 135, winY + winH - 35)
-    end
-
-    -- Area konten (kanan)
-    objects.contentArea.Position = Vector2.new(winX + 145, winY + 35)
-    objects.contentArea.Size = Vector2.new(winW - 155, winH - 70)
-
-    -- Elemen untuk menu Main
-    if objects.wsLabel then
-        objects.wsLabel.Position = Vector2.new(winX + 155, winY + 55)
-        objects.wsValue.Position = Vector2.new(winX + winW - 175, winY + 55)
-        
-        -- Slider track
-        objects.sliderTrack.Position = Vector2.new(winX + 155, winY + 90)
-        objects.sliderTrack.Size = Vector2.new(winW - 300, 8)
-        
-        -- Slider fill (ukuran proporsional)
-        local alpha = (currentWS - MIN_WS) / (MAX_WS - MIN_WS)
-        local fillWidth = (winW - 300) * alpha
-        objects.sliderFill.Position = Vector2.new(winX + 155, winY + 90)
-        objects.sliderFill.Size = Vector2.new(fillWidth, 8)
-        
-        -- Slider knob
-        local knobX = winX + 155 + fillWidth - 8
-        objects.sliderKnob.Position = Vector2.new(knobX, winY + 86)
-        objects.sliderKnob.Size = Vector2.new(16, 16)
-        
-        -- Tombol Inf Jump
-        objects.infJumpBtn.Position = Vector2.new(winX + 155, winY + 115)
-        objects.infJumpBtn.Size = Vector2.new(130, 30)
-        objects.infJumpText.Position = Vector2.new(winX + 165, winY + 120)
-        
-        -- Tombol Noclip
-        objects.noclipBtn.Position = Vector2.new(winX + 155 + 140, winY + 115)
-        objects.noclipBtn.Size = Vector2.new(130, 30)
-        objects.noclipText.Position = Vector2.new(winX + 165 + 140, winY + 120)
-    end
-
-    -- Minimize box (jika di-minimize) dengan emoji
-    objects.minimizeBox.Position = Vector2.new(winX, winY)
-    objects.minimizeBox.Size = Vector2.new(minW, minH)
-    objects.minimizeText.Position = Vector2.new(winX + (minW/2) - 25, winY + (minH/2) - 10)
-end
-
--- Fungsi untuk mengatur visibilitas elemen menu
-local function SetMenu(menuIndex)
-    currentMenu = menuIndex
-
-    -- Sembunyikan semua konten spesifik menu
-    if objects.wsLabel then
-        objects.wsLabel.Visible = (menuIndex == 1)
-        objects.wsValue.Visible = (menuIndex == 1)
-        objects.sliderTrack.Visible = (menuIndex == 1)
-        objects.sliderFill.Visible = (menuIndex == 1)
-        objects.sliderKnob.Visible = (menuIndex == 1)
-        objects.infJumpBtn.Visible = (menuIndex == 1)
-        objects.infJumpText.Visible = (menuIndex == 1)
-        objects.noclipBtn.Visible = (menuIndex == 1)
-        objects.noclipText.Visible = (menuIndex == 1)
-    end
-
-    -- Untuk menu lain (Teleport, Setting) bisa ditambahkan nanti
-    if menuIndex == 1 then
-        objects.contentText.Text = "" -- kosong karena sudah ada elemen sendiri
-    elseif menuIndex == 2 then
-        objects.contentText.Text = "Menu Teleport\n(Coming Soon)"
-    elseif menuIndex == 3 then
-        objects.contentText.Text = "Menu Setting\n(Coming Soon)"
-    end
-end
-
--- Fungsi untuk memperbarui slider berdasarkan nilai
-local function UpdateSliderFromValue(value)
-    currentWS = math.clamp(value, MIN_WS, MAX_WS)
-    local alpha = (currentWS - MIN_WS) / (MAX_WS - MIN_WS)
-    local trackWidth = winW - 300
+-- Fungsi update slider berdasarkan nilai
+local function updateSliderFromValue(value)
+    value = math.floor(value + 0.5) -- pembulatan ke integer terdekat
+    wsValueNum = math.clamp(value, minWS, maxWS)
+    wsValue.Text = tostring(wsValueNum)
+    local alpha = (wsValueNum - minWS) / (maxWS - minWS)
+    local trackWidth = sliderTrack.AbsoluteSize.X
     local fillWidth = trackWidth * alpha
-    objects.sliderFill.Size = Vector2.new(fillWidth, 8)
-    local knobX = winX + 155 + fillWidth - 8
-    objects.sliderKnob.Position = Vector2.new(knobX, winY + 86)
-    objects.wsValue.Text = tostring(currentWS)
+    sliderFill.Size = UDim2.fromOffset(fillWidth, 8)
+    sliderKnob.Position = UDim2.fromOffset(fillWidth - 9, -5)
 end
 
--- Fungsi untuk memperbarui slider berdasarkan posisi mouse
-local function UpdateSliderFromMouse(mouseX)
-    local trackX = winX + 155
-    local trackWidth = winW - 300
-    local relX = math.clamp(mouseX - trackX, 0, trackWidth)
+-- Fungsi update slider berdasarkan posisi mouse
+local function updateSliderFromMouse(mouseX)
+    local trackPos = sliderTrack.AbsolutePosition.X
+    local trackWidth = sliderTrack.AbsoluteSize.X
+    local relX = math.clamp(mouseX - trackPos, 0, trackWidth)
     local alpha = relX / trackWidth
-    local newValue = MIN_WS + alpha * (MAX_WS - MIN_WS)
-    UpdateSliderFromValue(newValue)
+    local newValue = minWS + alpha * (maxWS - minWS)
+    updateSliderFromValue(newValue)
 end
 
--- Fungsi untuk toggle minimize
-local function ToggleMinimize()
+-- Fungsi toggle minimize
+local function toggleMinimize()
     isMinimized = not isMinimized
-
-    -- Sembunyikan/tampilkan elemen
-    objects.bg.Visible = not isMinimized
-    objects.titleBar.Visible = not isMinimized
-    objects.titleText.Visible = not isMinimized
-    objects.closeBtn.Visible = not isMinimized
-    objects.closeText.Visible = not isMinimized
-    objects.minBtn.Visible = not isMinimized
-    objects.minText.Visible = not isMinimized
-    objects.leftPanel.Visible = not isMinimized
-    objects.mainBtn.Visible = not isMinimized
-    objects.mainText.Visible = not isMinimized
-    objects.tpBtn.Visible = not isMinimized
-    objects.tpText.Visible = not isMinimized
-    objects.settingBtn.Visible = not isMinimized
-    objects.settingText.Visible = not isMinimized
-    objects.divider.Visible = not isMinimized
-    objects.contentArea.Visible = not isMinimized
-    objects.contentText.Visible = not isMinimized
-
-    -- Konten menu Main
-    if objects.wsLabel then
-        objects.wsLabel.Visible = (not isMinimized and currentMenu == 1)
-        objects.wsValue.Visible = (not isMinimized and currentMenu == 1)
-        objects.sliderTrack.Visible = (not isMinimized and currentMenu == 1)
-        objects.sliderFill.Visible = (not isMinimized and currentMenu == 1)
-        objects.sliderKnob.Visible = (not isMinimized and currentMenu == 1)
-        objects.infJumpBtn.Visible = (not isMinimized and currentMenu == 1)
-        objects.infJumpText.Visible = (not isMinimized and currentMenu == 1)
-        objects.noclipBtn.Visible = (not isMinimized and currentMenu == 1)
-        objects.noclipText.Visible = (not isMinimized and currentMenu == 1)
+    panel.Visible = not isMinimized
+    minimizeFrame.Visible = isMinimized
+    if isMinimized then
+        minimizeFrame.Position = panel.Position -- sinkronkan posisi
+    else
+        panel.Position = minimizeFrame.Position
     end
-
-    objects.minimizeBox.Visible = isMinimized
-    objects.minimizeText.Visible = isMinimized
 end
 
--- Fungsi untuk membuat UI
-local function CreateUI()
-    -- Buat objek-objek utama
-    objects.bg = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.1, 0.1, 0.1), -- Hitam pekat
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 1
-    })
+-- =============================================
+--              EVENT HANDLING
+-- =============================================
 
-    objects.titleBar = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.3, 0.3, 0.3),
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 2
-    })
+-- Menu click
+mainBtn.MouseButton1Click:Connect(function() setMenu("Main") end)
+tpBtn.MouseButton1Click:Connect(function() setMenu("Teleport") end)
+settingBtn.MouseButton1Click:Connect(function() setMenu("Setting") end)
 
-    objects.titleText = NewDrawing("Text", {
-        Text = "Script BY Azka",
-        Color = Color3.new(1, 1, 1),
-        Size = 18,
-        Center = false,
-        Outline = false,
-        Font = 2, -- Bold
-        Visible = true,
-        ZIndex = 4
-    })
+-- Close
+closeBtn.MouseButton1Click:Connect(function()
+    gui:Destroy()
+    _G.AzkaUI = nil
+end)
 
-    -- Tombol Close (X)
-    objects.closeBtn = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(1, 0.3, 0.3),
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 3
-    })
-    objects.closeText = NewDrawing("Text", {
-        Text = "X",
-        Color = Color3.new(1, 1, 1),
-        Size = 16,
-        Center = true,
-        Font = 2,
-        Visible = true,
-        ZIndex = 4
-    })
-    NewButton(objects.closeBtn, function()
-        Cleanup()
-    end)
+-- Minimize
+minBtn.MouseButton1Click:Connect(toggleMinimize)
+minimizeFrame.MouseButton1Click:Connect(toggleMinimize) -- klik pada minimize frame untuk membuka
 
-    -- Tombol Minimize (-)
-    objects.minBtn = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.3, 0.3, 1),
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 3
-    })
-    objects.minText = NewDrawing("Text", {
-        Text = "-",
-        Color = Color3.new(1, 1, 1),
-        Size = 16,
-        Center = true,
-        Font = 2,
-        Visible = true,
-        ZIndex = 4
-    })
-    NewButton(objects.minBtn, function()
-        ToggleMinimize()
-    end)
+-- Inf Jump toggle
+infJumpBtn.MouseButton1Click:Connect(function()
+    infJumpEnabled = not infJumpEnabled
+    infJumpBtn.Text = "Inf Jump: " .. (infJumpEnabled and "ON" or "OFF")
+    infJumpBtn.BackgroundColor3 = infJumpEnabled and Color3.fromRGB(30, 120, 30) or Color3.fromRGB(50, 50, 60)
+end)
 
-    -- Minimize box (awalnya hidden) dengan emoji
-    objects.minimizeBox = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.2, 0.2, 0.2),
-        Transparency = 0,
-        Visible = false,
-        ZIndex = 1
-    })
-    objects.minimizeText = NewDrawing("Text", {
-        Text = "✌︎㋡",
-        Color = Color3.new(1, 1, 1),
-        Size = 30,
-        Center = true,
-        Font = 2,
-        Visible = false,
-        ZIndex = 2
-    })
-    NewButton(objects.minimizeBox, function()
-        -- Klik pada minimize box akan membuka kembali (toggle)
-        ToggleMinimize()
-    end)
+-- Noclip toggle
+noclipBtn.MouseButton1Click:Connect(function()
+    noclipEnabled = not noclipEnabled
+    noclipBtn.Text = "Noclip: " .. (noclipEnabled and "ON" or "OFF")
+    noclipBtn.BackgroundColor3 = noclipEnabled and Color3.fromRGB(30, 120, 30) or Color3.fromRGB(50, 50, 60)
+end)
 
-    -- Panel kiri (background menu)
-    objects.leftPanel = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.15, 0.15, 0.15),
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 2
-    })
-
-    -- Menu buttons (dengan background sendiri)
-    objects.mainBtn = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.25, 0.25, 0.25),
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 3
-    })
-    objects.mainText = NewDrawing("Text", {
-        Text = "Main",
-        Color = Color3.new(1, 1, 1),
-        Size = 16,
-        Center = false,
-        Font = 2,
-        Visible = true,
-        ZIndex = 4
-    })
-    NewButton(objects.mainBtn, function() SetMenu(1) end)
-
-    objects.tpBtn = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.25, 0.25, 0.25),
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 3
-    })
-    objects.tpText = NewDrawing("Text", {
-        Text = "Teleport",
-        Color = Color3.new(1, 1, 1),
-        Size = 16,
-        Center = false,
-        Font = 2,
-        Visible = true,
-        ZIndex = 4
-    })
-    NewButton(objects.tpBtn, function() SetMenu(2) end)
-
-    objects.settingBtn = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.25, 0.25, 0.25),
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 3
-    })
-    objects.settingText = NewDrawing("Text", {
-        Text = "Setting",
-        Color = Color3.new(1, 1, 1),
-        Size = 16,
-        Center = false,
-        Font = 2,
-        Visible = true,
-        ZIndex = 4
-    })
-    NewButton(objects.settingBtn, function() SetMenu(3) end)
-
-    -- Garis pemisah vertikal (putih)
-    objects.divider = NewDrawing("Line", {
-        Thickness = 2,
-        Color = Color3.new(1, 1, 1),
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 3
-    })
-
-    -- Area konten
-    objects.contentArea = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.12, 0.12, 0.12),
-        Transparency = 0,
-        Visible = true,
-        ZIndex = 2
-    })
-    objects.contentText = NewDrawing("Text", {
-        Text = "Selamat datang di Script BY Azka",
-        Color = Color3.new(1, 1, 1),
-        Size = 16,
-        Center = true,
-        Font = 2,
-        Visible = true,
-        ZIndex = 3
-    })
-
-    -- Elemen untuk menu Main (akan disembunyikan jika menu lain)
-    objects.wsLabel = NewDrawing("Text", {
-        Text = "WalkSpeed",
-        Color = Color3.new(1, 1, 1),
-        Size = 16,
-        Font = 2,
-        Visible = false,
-        ZIndex = 3
-    })
-    objects.wsValue = NewDrawing("Text", {
-        Text = "30",
-        Color = Color3.new(0.8, 0.8, 1),
-        Size = 16,
-        Font = 2,
-        Visible = false,
-        ZIndex = 3
-    })
-
-    -- Slider track
-    objects.sliderTrack = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.3, 0.3, 0.3),
-        Transparency = 0,
-        Visible = false,
-        ZIndex = 3
-    })
-    -- Slider fill
-    objects.sliderFill = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.2, 0.6, 1),
-        Transparency = 0,
-        Visible = false,
-        ZIndex = 4
-    })
-    -- Slider knob
-    objects.sliderKnob = NewDrawing("Circle", {
-        Filled = true,
-        Color = Color3.new(1, 1, 1),
-        Radius = 8,
-        Visible = false,
-        ZIndex = 5
-    })
-
-    -- Tombol Inf Jump
-    objects.infJumpBtn = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.25, 0.25, 0.25),
-        Transparency = 0,
-        Visible = false,
-        ZIndex = 3
-    })
-    objects.infJumpText = NewDrawing("Text", {
-        Text = "Inf Jump: OFF",
-        Color = Color3.new(1, 1, 1),
-        Size = 14,
-        Font = 2,
-        Visible = false,
-        ZIndex = 4
-    })
-    NewButton(objects.infJumpBtn, function()
-        infJumpEnabled = not infJumpEnabled
-        local status = infJumpEnabled and "ON" or "OFF"
-        local color = infJumpEnabled and Color3.new(0.2, 0.8, 0.2) or Color3.new(0.25, 0.25, 0.25)
-        objects.infJumpBtn.Color = color
-        objects.infJumpText.Text = "Inf Jump: " .. status
-    end)
-
-    -- Tombol Noclip
-    objects.noclipBtn = NewDrawing("Square", {
-        Filled = true,
-        Color = Color3.new(0.25, 0.25, 0.25),
-        Transparency = 0,
-        Visible = false,
-        ZIndex = 3
-    })
-    objects.noclipText = NewDrawing("Text", {
-        Text = "Noclip: OFF",
-        Color = Color3.new(1, 1, 1),
-        Size = 14,
-        Font = 2,
-        Visible = false,
-        ZIndex = 4
-    })
-    NewButton(objects.noclipBtn, function()
-        noclipEnabled = not noclipEnabled
-        local status = noclipEnabled and "ON" or "OFF"
-        local color = noclipEnabled and Color3.new(0.2, 0.8, 0.2) or Color3.new(0.25, 0.25, 0.25)
-        objects.noclipBtn.Color = color
-        objects.noclipText.Text = "Noclip: " .. status
-    end)
-
-    -- Set posisi awal
-    UpdatePositions()
-
-    -- Set menu awal
-    SetMenu(1)
-end
-
--- Buat UI
-CreateUI()
-
--- Event handler untuk klik
-local function OnInputBegan(input)
+-- Slider logic
+local function onSliderInputBegan(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local mousePos = UserInputService:GetMouseLocation()
-
-        -- Cek tombol-tombol
-        for _, btn in ipairs(buttons) do
-            local area = btn.area
-            if area.Visible then
-                local btnPos = area.Position
-                local btnSize = area.Size
-                -- Untuk Circle, deteksi jarak
-                if area == objects.sliderKnob then
-                    local dx = mousePos.X - btnPos.X
-                    local dy = mousePos.Y - btnPos.Y
-                    if dx*dx + dy*dy <= 8*8 then
-                        btn.callback()
-                        break
-                    end
-                else
-                    if mousePos.X >= btnPos.X and mousePos.X <= btnPos.X + btnSize.X and
-                       mousePos.Y >= btnPos.Y and mousePos.Y <= btnPos.Y + btnSize.Y then
-                        btn.callback()
-                        break
-                    end
-                end
-            end
-        end
-
-        -- Cek drag di title bar atau minimize box
-        if not isMinimized then
-            local titleBar = objects.titleBar
-            if mousePos.X >= titleBar.Position.X and mousePos.X <= titleBar.Position.X + titleBar.Size.X and
-               mousePos.Y >= titleBar.Position.Y and mousePos.Y <= titleBar.Position.Y + titleBar.Size.Y then
-                isDragging = true
-                dragOffsetX = mousePos.X - winX
-                dragOffsetY = mousePos.Y - winY
-            end
-        else
-            -- Jika minimized, drag dari minimize box
-            local minBox = objects.minimizeBox
-            if mousePos.X >= minBox.Position.X and mousePos.X <= minBox.Position.X + minBox.Size.X and
-               mousePos.Y >= minBox.Position.Y and mousePos.Y <= minBox.Position.Y + minBox.Size.Y then
-                isDragging = true
-                dragOffsetX = mousePos.X - winX
-                dragOffsetY = mousePos.Y - winY
-            end
-        end
-
-        -- Cek apakah klik di slider track/knob untuk memulai drag slider
-        if not isMinimized and currentMenu == 1 then
-            local track = objects.sliderTrack
-            local knob = objects.sliderKnob
-            if track.Visible then
-                -- Cek track
-                if mousePos.X >= track.Position.X and mousePos.X <= track.Position.X + track.Size.X and
-                   mousePos.Y >= track.Position.Y and mousePos.Y <= track.Position.Y + track.Size.Y then
-                    draggingSlider = true
-                    UpdateSliderFromMouse(mousePos.X)
-                end
-                -- Cek knob (lingkaran)
-                local dx = mousePos.X - knob.Position.X
-                local dy = mousePos.Y - knob.Position.Y
-                if dx*dx + dy*dy <= 8*8 then
-                    draggingSlider = true
-                end
-            end
-        end
+        draggingSlider = true
+        updateSliderFromMouse(input.Position.X)
     end
 end
 
-local inputConn = UserInputService.InputBegan:Connect(OnInputBegan)
+sliderTrack.InputBegan:Connect(onSliderInputBegan)
+sliderKnob.InputBegan:Connect(onSliderInputBegan)
 
--- Handler untuk pergerakan mouse (drag slider)
-local inputChangedConn = UserInputService.InputChanged:Connect(function(input)
-    if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement or
-                           input.UserInputType == Enum.UserInputType.Touch) then
-        local mousePos = UserInputService:GetMouseLocation()
-        UpdateSliderFromMouse(mousePos.X)
+UserInputService.InputChanged:Connect(function(input)
+    if draggingSlider and (input.UserInputType == Enum.UserInputType.MouseMovement) then
+        updateSliderFromMouse(input.Position.X)
     end
 end)
 
-local inputEndedConn = UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or
-       input.UserInputType == Enum.UserInputType.Touch then
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
         draggingSlider = false
     end
 end)
 
--- Loop untuk drag window
-local dragConn = RunService.RenderStepped:Connect(function()
-    if isDragging then
-        local mousePos = UserInputService:GetMouseLocation()
-        winX = mousePos.X - dragOffsetX
-        winY = mousePos.Y - dragOffsetY
-        UpdatePositions()
+-- =============================================
+--              DRAG WINDOW
+-- =============================================
 
-        if not UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-            isDragging = false
+local function makeDraggable(dragHandle, targetFrame)
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingWindow = true
+            local mousePos = UserInputService:GetMouseLocation()
+            local framePos = targetFrame.AbsolutePosition
+            dragOffset = Vector2.new(mousePos.X - framePos.X, mousePos.Y - framePos.Y)
+        end
+    end)
+end
+
+UserInputService.InputChanged:Connect(function(input)
+    if draggingWindow and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mousePos = UserInputService:GetMouseLocation()
+        local newPos = UDim2.fromOffset(mousePos.X - dragOffset.X, mousePos.Y - dragOffset.Y)
+        if panel.Visible then
+            panel.Position = newPos
+        else
+            minimizeFrame.Position = newPos
         end
     end
 end)
 
--- Fungsi untuk mendapatkan humanoid (dari contoh)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingWindow = false
+    end
+end)
+
+-- Drag handles
+makeDraggable(titleBar, panel)
+makeDraggable(minimizeFrame, minimizeFrame)
+
+-- =============================================
+--              LOOP FITUR
+-- =============================================
+
+-- Humanoid helper
 local function waitForHumanoid()
     local char = player.Character or player.CharacterAdded:Wait()
     local hum = char:FindFirstChildWhichIsA("Humanoid")
@@ -659,15 +550,15 @@ local function waitForHumanoid()
     return hum
 end
 
--- Loop untuk WalkSpeed
+-- WalkSpeed loop
 task.spawn(function()
     local hum = waitForHumanoid()
     player.CharacterAdded:Connect(function()
         hum = waitForHumanoid()
     end)
-    while _G.AzkaUI do
+    while gui and gui.Parent do
         if hum and hum.Parent then
-            hum.WalkSpeed = currentWS
+            hum.WalkSpeed = wsValueNum
         else
             hum = waitForHumanoid()
         end
@@ -691,7 +582,7 @@ end)
 
 -- Noclip
 task.spawn(function()
-    while _G.AzkaUI do
+    while gui and gui.Parent do
         if noclipEnabled then
             local char = player.Character
             if char then
@@ -706,9 +597,13 @@ task.spawn(function()
     end
 end)
 
--- Simpan koneksi untuk cleanup
-_G.AzkaUI.Cleanup = Cleanup
-_G.AzkaUI.Connections = {inputConn, inputChangedConn, inputEndedConn, dragConn}
+-- Inisialisasi slider dan menu
+updateSliderFromValue(30)
+setMenu("Main")
 
--- Notifikasi
-print("Azka UI berhasil dimuat. Tekan X untuk menutup.")
+-- Cleanup function untuk dipanggil dari luar
+_G.AzkaUI.Cleanup = function()
+    gui:Destroy()
+end
+
+print("Azka UI (Instance) berhasil dimuat. Tekan X untuk menutup.")
