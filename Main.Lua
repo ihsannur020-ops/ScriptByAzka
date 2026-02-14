@@ -43,6 +43,7 @@ panel.Size = UDim2.fromOffset(600, 450)
 panel.Position = UDim2.new(0.5, -300, 0.4, -225)
 panel.BackgroundColor3 = Color3.fromRGB(20, 20, 25) -- solid gelap
 panel.BorderSizePixel = 0
+panel.Active = true
 panel.Parent = gui
 
 local panelCorner = Instance.new("UICorner")
@@ -349,14 +350,15 @@ noclipCorner.CornerRadius = UDim.new(0, 8)
 noclipCorner.Parent = noclipBtn
 
 -- =============================================
---      FRAME MINIMIZE (kotak emoji)
+--      FRAME MINIMIZE (kotak dengan ⬡)
 -- =============================================
 local minimizeFrame = Instance.new("Frame")
 minimizeFrame.Name = "MinimizeFrame"
-minimizeFrame.Size = UDim2.fromOffset(200, 100)
+minimizeFrame.Size = UDim2.fromOffset(80, 80) -- ukuran kotak kecil
 minimizeFrame.Position = panel.Position -- ikuti posisi panel awal
 minimizeFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 minimizeFrame.Visible = false
+minimizeFrame.Active = true
 minimizeFrame.Parent = gui
 
 local minFrameCorner = Instance.new("UICorner")
@@ -368,15 +370,15 @@ minFrameStroke.Thickness = 2
 minFrameStroke.Color = Color3.fromRGB(80, 120, 255)
 minFrameStroke.Parent = minimizeFrame
 
-local emojiLabel = Instance.new("TextLabel")
-emojiLabel.Name = "Emoji"
-emojiLabel.Size = UDim2.new(1, 0, 1, 0)
-emojiLabel.BackgroundTransparency = 1
-emojiLabel.Text = "✌︎㋡"
-emojiLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-emojiLabel.Font = Enum.Font.GothamBold
-emojiLabel.TextSize = 40
-emojiLabel.Parent = minimizeFrame
+local hexagonLabel = Instance.new("TextLabel")
+hexagonLabel.Name = "Hexagon"
+hexagonLabel.Size = UDim2.new(1, 0, 1, 0)
+hexagonLabel.BackgroundTransparency = 1
+hexagonLabel.Text = "⬡" -- Hexagon unicode
+hexagonLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+hexagonLabel.Font = Enum.Font.GothamBold
+hexagonLabel.TextSize = 50
+hexagonLabel.Parent = minimizeFrame
 
 -- =============================================
 --              FUNGSI-FUNGSI
@@ -392,7 +394,8 @@ local infJumpEnabled = false
 local noclipEnabled = false
 local draggingSlider = false
 local draggingWindow = false
-local dragOffset = Vector2.new()
+local dragStartPos = Vector2.new()
+local dragStartFramePos = UDim2.new()
 
 -- Fungsi untuk mengganti menu
 local function setMenu(menu)
@@ -414,19 +417,23 @@ local function updateSliderFromValue(value)
     wsValue.Text = tostring(wsValueNum)
     local alpha = (wsValueNum - minWS) / (maxWS - minWS)
     local trackWidth = sliderTrack.AbsoluteSize.X
-    local fillWidth = trackWidth * alpha
-    sliderFill.Size = UDim2.fromOffset(fillWidth, 8)
-    sliderKnob.Position = UDim2.fromOffset(fillWidth - 9, -5)
+    if trackWidth > 0 then
+        local fillWidth = trackWidth * alpha
+        sliderFill.Size = UDim2.fromOffset(fillWidth, 8)
+        sliderKnob.Position = UDim2.fromOffset(fillWidth - 9, -5)
+    end
 end
 
 -- Fungsi update slider berdasarkan posisi mouse
 local function updateSliderFromMouse(mouseX)
     local trackPos = sliderTrack.AbsolutePosition.X
     local trackWidth = sliderTrack.AbsoluteSize.X
-    local relX = math.clamp(mouseX - trackPos, 0, trackWidth)
-    local alpha = relX / trackWidth
-    local newValue = minWS + alpha * (maxWS - minWS)
-    updateSliderFromValue(newValue)
+    if trackWidth > 0 then
+        local relX = math.clamp(mouseX - trackPos, 0, trackWidth)
+        local alpha = relX / trackWidth
+        local newValue = minWS + alpha * (maxWS - minWS)
+        updateSliderFromValue(newValue)
+    end
 end
 
 -- Fungsi toggle minimize
@@ -435,7 +442,8 @@ local function toggleMinimize()
     panel.Visible = not isMinimized
     minimizeFrame.Visible = isMinimized
     if isMinimized then
-        minimizeFrame.Position = panel.Position -- sinkronkan posisi
+        -- Sinkronkan posisi minimize frame dengan posisi panel terakhir
+        minimizeFrame.Position = panel.Position
     else
         panel.Position = minimizeFrame.Position
     end
@@ -458,7 +466,16 @@ end)
 
 -- Minimize
 minBtn.MouseButton1Click:Connect(toggleMinimize)
-minimizeFrame.MouseButton1Click:Connect(toggleMinimize) -- klik pada minimize frame untuk membuka
+
+-- Klik pada minimize frame untuk membuka (gunakan kedua event untuk memastikan)
+minimizeFrame.MouseButton1Click:Connect(toggleMinimize)
+minimizeFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        -- Jangan toggle jika sedang drag, biarkan drag handler yang menangani
+        -- Tapi kita perlu membedakan apakah itu klik atau drag
+        -- Kita akan handle di InputEnded nanti
+    end
+end)
 
 -- Inf Jump toggle
 infJumpBtn.MouseButton1Click:Connect(function()
@@ -498,41 +515,48 @@ UserInputService.InputEnded:Connect(function(input)
 end)
 
 -- =============================================
---              DRAG WINDOW
+--              DRAG WINDOW (Perbaikan)
 -- =============================================
 
-local function makeDraggable(dragHandle, targetFrame)
-    dragHandle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            draggingWindow = true
-            local mousePos = UserInputService:GetMouseLocation()
-            local framePos = targetFrame.AbsolutePosition
-            dragOffset = Vector2.new(mousePos.X - framePos.X, mousePos.Y - framePos.Y)
-        end
-    end)
+-- Fungsi untuk memulai drag
+local function startDrag(frame, input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        draggingWindow = true
+        dragStartPos = Vector2.new(input.Position.X, input.Position.Y)
+        dragStartFramePos = frame.Position
+    end
 end
 
+-- Event untuk title bar (drag panel)
+titleBar.InputBegan:Connect(function(input)
+    startDrag(panel, input)
+end)
+
+-- Event untuk minimize frame (drag minimize box)
+minimizeFrame.InputBegan:Connect(function(input)
+    startDrag(minimizeFrame, input)
+end)
+
+-- Update posisi saat drag
 UserInputService.InputChanged:Connect(function(input)
     if draggingWindow and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local mousePos = UserInputService:GetMouseLocation()
-        local newPos = UDim2.fromOffset(mousePos.X - dragOffset.X, mousePos.Y - dragOffset.Y)
-        if panel.Visible then
-            panel.Position = newPos
-        else
-            minimizeFrame.Position = newPos
-        end
+        local delta = Vector2.new(input.Position.X - dragStartPos.X, input.Position.Y - dragStartPos.Y)
+        local currentFrame = panel.Visible and panel or minimizeFrame
+        currentFrame.Position = UDim2.new(
+            dragStartFramePos.X.Scale,
+            dragStartFramePos.X.Offset + delta.X,
+            dragStartFramePos.Y.Scale,
+            dragStartFramePos.Y.Offset + delta.Y
+        )
     end
 end)
 
+-- Akhiri drag
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         draggingWindow = false
     end
 end)
-
--- Drag handles
-makeDraggable(titleBar, panel)
-makeDraggable(minimizeFrame, minimizeFrame)
 
 -- =============================================
 --              LOOP FITUR
