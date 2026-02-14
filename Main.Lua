@@ -1,6 +1,6 @@
 --[[
     Azka UI - Custom UI seperti Kavo untuk Delta Executor
-    Fitur: Drag, Minimize, Close, Menu Slide (Main, Teleport, Setting)
+    Fitur: Drag, Minimize (emoji), Close, Menu Slide dengan background panel
     Dibuat oleh Azka
 ]]
 
@@ -67,7 +67,7 @@ end
 
 -- Fungsi untuk memperbarui posisi semua objek berdasarkan winX, winY
 local function UpdatePositions()
-    -- Background utama
+    -- Background utama (solid)
     objects.bg.Position = Vector2.new(winX, winY)
     objects.bg.Size = Vector2.new(winW, winH)
 
@@ -75,7 +75,7 @@ local function UpdatePositions()
     objects.titleBar.Position = Vector2.new(winX, winY)
     objects.titleBar.Size = Vector2.new(winW, 30)
 
-    -- Title text
+    -- Title text (Bold)
     objects.titleText.Position = Vector2.new(winX + 10, winY + 5)
 
     -- Tombol Close (X)
@@ -88,40 +88,49 @@ local function UpdatePositions()
     objects.minBtn.Size = Vector2.new(25, 20)
     objects.minText.Position = Vector2.new(winX + winW - 63, winY + 5)
 
-    -- Menu buttons (kiri)
-    local menuY = winY + 40
-    objects.mainBtn.Position = Vector2.new(winX + 10, menuY)
-    objects.mainBtn.Size = Vector2.new(100, 30)
-    objects.mainText.Position = Vector2.new(winX + 20, menuY + 5)
+    -- Panel kiri (background menu)
+    objects.leftPanel.Position = Vector2.new(winX + 5, winY + 35)
+    objects.leftPanel.Size = Vector2.new(125, winH - 70)
 
-    objects.tpBtn.Position = Vector2.new(winX + 10, menuY + 40)
-    objects.tpBtn.Size = Vector2.new(100, 30)
-    objects.tpText.Position = Vector2.new(winX + 20, menuY + 45)
+    -- Menu buttons (di dalam panel kiri)
+    local btnX = winX + 15
+    local btnW = 105
+    local btnH = 40
+    local spacing = 10
+    local firstY = winY + 45
 
-    objects.settingBtn.Position = Vector2.new(winX + 10, menuY + 80)
-    objects.settingBtn.Size = Vector2.new(100, 30)
-    objects.settingText.Position = Vector2.new(winX + 20, menuY + 85)
+    objects.mainBtn.Position = Vector2.new(btnX, firstY)
+    objects.mainBtn.Size = Vector2.new(btnW, btnH)
+    objects.mainText.Position = Vector2.new(btnX + 10, firstY + 10)
 
-    -- Garis pemisah vertikal
+    objects.tpBtn.Position = Vector2.new(btnX, firstY + btnH + spacing)
+    objects.tpBtn.Size = Vector2.new(btnW, btnH)
+    objects.tpText.Position = Vector2.new(btnX + 10, firstY + btnH + spacing + 10)
+
+    objects.settingBtn.Position = Vector2.new(btnX, firstY + 2 * (btnH + spacing))
+    objects.settingBtn.Size = Vector2.new(btnW, btnH)
+    objects.settingText.Position = Vector2.new(btnX + 10, firstY + 2 * (btnH + spacing) + 10)
+
+    -- Garis pemisah vertikal (batas antara menu dan konten)
     objects.divider.Visible = not isMinimized
     if not isMinimized then
-        objects.divider.From = Vector2.new(winX + 130, winY + 35)
-        objects.divider.To = Vector2.new(winX + 130, winY + winH - 35)
+        objects.divider.From = Vector2.new(winX + 135, winY + 35)
+        objects.divider.To = Vector2.new(winX + 135, winY + winH - 35)
     end
 
     -- Area konten (kanan)
-    objects.contentArea.Position = Vector2.new(winX + 140, winY + 35)
-    objects.contentArea.Size = Vector2.new(winW - 150, winH - 70)
+    objects.contentArea.Position = Vector2.new(winX + 145, winY + 35)
+    objects.contentArea.Size = Vector2.new(winW - 155, winH - 70)
 
     -- Teks konten (di tengah area konten)
-    local contentX = winX + 140 + (winW - 150)/2 - 50
-    local contentY = winY + 35 + (winH - 70)/2 - 10
+    local contentX = winX + 145 + (winW - 155)/2 - 70
+    local contentY = winY + 35 + (winH - 70)/2 - 20
     objects.contentText.Position = Vector2.new(contentX, contentY)
 
-    -- Minimize box (jika di-minimize)
+    -- Minimize box (jika di-minimize) dengan emoji
     objects.minimizeBox.Position = Vector2.new(winX, winY)
     objects.minimizeBox.Size = Vector2.new(minW, minH)
-    objects.minimizeText.Position = Vector2.new(winX + (minW/2) - 60, winY + (minH/2) - 10)
+    objects.minimizeText.Position = Vector2.new(winX + (minW/2) - 25, winY + (minH/2) - 10)
 end
 
 -- Fungsi untuk mengubah konten berdasarkan menu yang dipilih
@@ -143,6 +152,7 @@ local function ToggleMinimize()
     objects.closeText.Visible = not isMinimized
     objects.minBtn.Visible = not isMinimized
     objects.minText.Visible = not isMinimized
+    objects.leftPanel.Visible = not isMinimized
     objects.mainBtn.Visible = not isMinimized
     objects.mainText.Visible = not isMinimized
     objects.tpBtn.Visible = not isMinimized
@@ -161,8 +171,8 @@ local function CreateUI()
     -- Buat objek-objek utama
     objects.bg = NewDrawing("Square", {
         Filled = true,
-        Color = Color3.new(0.15, 0.15, 0.15),
-        Transparency = 0.2,
+        Color = Color3.new(0.1, 0.1, 0.1), -- Hitam pekat (solid)
+        Transparency = 0,
         Visible = true,
         ZIndex = 1
     })
@@ -181,9 +191,9 @@ local function CreateUI()
         Size = 18,
         Center = false,
         Outline = false,
-        Font = 2, -- Bold (tergantung executor, mungkin 2 untuk bold)
+        Font = 2, -- Bold
         Visible = true,
-        ZIndex = 3
+        ZIndex = 4
     })
 
     -- Tombol Close (X)
@@ -192,7 +202,7 @@ local function CreateUI()
         Color = Color3.new(1, 0.3, 0.3),
         Transparency = 0,
         Visible = true,
-        ZIndex = 2
+        ZIndex = 3
     })
     objects.closeText = NewDrawing("Text", {
         Text = "X",
@@ -201,7 +211,7 @@ local function CreateUI()
         Center = true,
         Font = 2,
         Visible = true,
-        ZIndex = 3
+        ZIndex = 4
     })
     NewButton(objects.closeBtn, function()
         Cleanup()
@@ -213,7 +223,7 @@ local function CreateUI()
         Color = Color3.new(0.3, 0.3, 1),
         Transparency = 0,
         Visible = true,
-        ZIndex = 2
+        ZIndex = 3
     })
     objects.minText = NewDrawing("Text", {
         Text = "-",
@@ -222,13 +232,13 @@ local function CreateUI()
         Center = true,
         Font = 2,
         Visible = true,
-        ZIndex = 3
+        ZIndex = 4
     })
     NewButton(objects.minBtn, function()
         ToggleMinimize()
     end)
 
-    -- Minimize box (awalnya hidden)
+    -- Minimize box (awalnya hidden) dengan emoji
     objects.minimizeBox = NewDrawing("Square", {
         Filled = true,
         Color = Color3.new(0.2, 0.2, 0.2),
@@ -237,11 +247,11 @@ local function CreateUI()
         ZIndex = 1
     })
     objects.minimizeText = NewDrawing("Text", {
-        Text = "Script BY Azka",
+        Text = "✌︎㋡", -- Emoji peace dan smiley
         Color = Color3.new(1, 1, 1),
-        Size = 18,
+        Size = 30,
         Center = true,
-        Font = 2,
+        Font = 2, -- Bold, meski emoji mungkin tidak terpengaruh
         Visible = false,
         ZIndex = 2
     })
@@ -249,22 +259,31 @@ local function CreateUI()
         ToggleMinimize()
     end)
 
-    -- Menu buttons
+    -- Panel kiri (background menu)
+    objects.leftPanel = NewDrawing("Square", {
+        Filled = true,
+        Color = Color3.new(0.15, 0.15, 0.15), -- Sedikit lebih terang dari bg utama
+        Transparency = 0,
+        Visible = true,
+        ZIndex = 2
+    })
+
+    -- Menu buttons (dengan background sendiri)
     objects.mainBtn = NewDrawing("Square", {
         Filled = true,
         Color = Color3.new(0.25, 0.25, 0.25),
         Transparency = 0,
         Visible = true,
-        ZIndex = 2
+        ZIndex = 3
     })
     objects.mainText = NewDrawing("Text", {
         Text = "Main",
         Color = Color3.new(1, 1, 1),
         Size = 16,
         Center = false,
-        Font = 2,
+        Font = 2, -- Bold
         Visible = true,
-        ZIndex = 3
+        ZIndex = 4
     })
     NewButton(objects.mainBtn, function() SetMenu(1) end)
 
@@ -273,16 +292,16 @@ local function CreateUI()
         Color = Color3.new(0.25, 0.25, 0.25),
         Transparency = 0,
         Visible = true,
-        ZIndex = 2
+        ZIndex = 3
     })
     objects.tpText = NewDrawing("Text", {
         Text = "Teleport",
         Color = Color3.new(1, 1, 1),
         Size = 16,
         Center = false,
-        Font = 2,
+        Font = 2, -- Bold
         Visible = true,
-        ZIndex = 3
+        ZIndex = 4
     })
     NewButton(objects.tpBtn, function() SetMenu(2) end)
 
@@ -291,44 +310,44 @@ local function CreateUI()
         Color = Color3.new(0.25, 0.25, 0.25),
         Transparency = 0,
         Visible = true,
-        ZIndex = 2
+        ZIndex = 3
     })
     objects.settingText = NewDrawing("Text", {
         Text = "Setting",
         Color = Color3.new(1, 1, 1),
         Size = 16,
         Center = false,
-        Font = 2,
+        Font = 2, -- Bold
         Visible = true,
-        ZIndex = 3
+        ZIndex = 4
     })
     NewButton(objects.settingBtn, function() SetMenu(3) end)
 
-    -- Garis pemisah vertikal
+    -- Garis pemisah vertikal (putih)
     objects.divider = NewDrawing("Line", {
         Thickness = 2,
         Color = Color3.new(1, 1, 1),
         Transparency = 0,
         Visible = true,
-        ZIndex = 2
+        ZIndex = 3
     })
 
     -- Area konten
     objects.contentArea = NewDrawing("Square", {
         Filled = true,
-        Color = Color3.new(0.1, 0.1, 0.1),
-        Transparency = 0.2,
+        Color = Color3.new(0.12, 0.12, 0.12),
+        Transparency = 0,
         Visible = true,
-        ZIndex = 1
+        ZIndex = 2
     })
     objects.contentText = NewDrawing("Text", {
         Text = "Selamat datang di Script BY Azka",
         Color = Color3.new(1, 1, 1),
         Size = 16,
         Center = true,
-        Font = 2,
+        Font = 2, -- Bold
         Visible = true,
-        ZIndex = 2
+        ZIndex = 3
     })
 
     -- Set posisi awal
