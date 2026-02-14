@@ -18,8 +18,9 @@ local guiName = "ScriptBYAzka"
 local flyGUIName = "AzkaFlyUI"
 local tpGUIName = "AzkaTeleportUI"
 local fpsGUIName = "AzkaFPSUI"
+local scriptLibGUIName = "AzkaScriptLibUI"
 local settingsGUIName = "AzkaSettingsUI"
-for _, name in ipairs({guiName, flyGUIName, tpGUIName, fpsGUIName, settingsGUIName}) do
+for _, name in ipairs({guiName, flyGUIName, tpGUIName, fpsGUIName, scriptLibGUIName, settingsGUIName}) do
 	local existing = CoreGui:FindFirstChild(name)
 	if existing then existing:Destroy() end
 end
@@ -30,6 +31,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Camera = workspace.CurrentCamera
+local StarterGui = game:GetService("StarterGui")
 
 local player = Players.LocalPlayer
 
@@ -80,8 +82,26 @@ local function makeDraggable(frame, dragHandle)
 	end)
 end
 
--- Shared variables for linked toggles
-local infiniteZoomEnabled = false
+-- Fungsi untuk membuat toggle button dengan teks ON/OFF
+local function createToggleButton(parent, text, width, initialColor)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, width or 110, 0, 28)
+	btn.BackgroundColor3 = initialColor or Color3.fromRGB(40, 40, 48)
+	btn.Text = text .. ": OFF"
+	btn.TextColor3 = Color3.fromRGB(210, 215, 230)
+	btn.Font = Enum.Font.GothamMedium
+	btn.TextSize = 13
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+	Instance.new("UIStroke", btn).Color = Color3.fromRGB(80, 120, 255)
+	btn.Parent = parent
+	local enabled = false
+	btn.MouseButton1Click:Connect(function()
+		enabled = not enabled
+		btn.Text = text .. (enabled and ": ON" or ": OFF")
+		btn.BackgroundColor3 = enabled and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
+	end)
+	return btn, function() return enabled end
+end
 
 -- ========== MAIN MENU ==========
 local gui = Instance.new("ScreenGui")
@@ -91,11 +111,11 @@ gui.IgnoreGuiInset = true
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = CoreGui
 
--- Main panel (size diperbesar)
+-- Main panel
 local panel = Instance.new("Frame")
 panel.Name = "Panel"
-panel.Size = UDim2.fromOffset(450, 0)
-panel.Position = UDim2.new(0.5, -225, 0.4, -100)
+panel.Size = UDim2.fromOffset(400, 0)  -- diperbesar
+panel.Position = UDim2.new(0.5, -200, 0.4, -150)
 panel.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 panel.Parent = gui
 panel.AutomaticSize = Enum.AutomaticSize.Y
@@ -128,24 +148,24 @@ title.TextColor3 = Color3.fromRGB(230, 235, 255)
 title.Text = "Script BY Azka"
 title.Parent = titleBar
 
--- Gear button (⚙)
+-- Gear button (settings) di kiri
 local gearBtn = Instance.new("TextButton")
-gearBtn.Name = "Gear"
+gearBtn.Name = "Settings"
 gearBtn.Size = UDim2.fromOffset(36, 24)
-gearBtn.Position = UDim2.new(1, -84, 0.5, -12)
+gearBtn.Position = UDim2.new(0, 12, 0.5, -12)
 gearBtn.Text = "⚙"
 gearBtn.Font = Enum.Font.GothamBold
-gearBtn.TextSize = 18
+gearBtn.TextSize = 20
 gearBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
 gearBtn.TextColor3 = Color3.fromRGB(200, 205, 220)
 Instance.new("UICorner", gearBtn).CornerRadius = UDim.new(0, 8)
 gearBtn.Parent = titleBar
 
--- Minimize button
+-- Minimize button (for main menu)
 local minBtn = Instance.new("TextButton")
 minBtn.Name = "Minimize"
 minBtn.Size = UDim2.fromOffset(36, 24)
-minBtn.Position = UDim2.new(1, -124, 0.5, -12)
+minBtn.Position = UDim2.new(1, -84, 0.5, -12)
 minBtn.Text = "—"
 minBtn.Font = Enum.Font.GothamBold
 minBtn.TextSize = 20
@@ -178,7 +198,7 @@ body.AutomaticSize = Enum.AutomaticSize.Y
 
 local layout = Instance.new("UIListLayout", body)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Padding = UDim.new(0, 12)
+layout.Padding = UDim.new(0, 8)
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- ===== WalkSpeed Slider =====
@@ -370,100 +390,54 @@ task.wait()
 setWSFromX(wsTrack.AbsolutePosition.X + (currentWS - MIN_WS) / (MAX_WS - MIN_WS) * wsTrack.AbsoluteSize.X)
 setBoostFromX(boostTrack.AbsolutePosition.X)
 
--- ===== Helper untuk membuat toggle button =====
-local function makeToggle(parent, text, width, initialColor)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, width or 100, 0, 28)
-	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-	btn.Text = text .. ": OFF"
-	btn.TextColor3 = Color3.fromRGB(210, 215, 230)
-	btn.Font = Enum.Font.GothamMedium
-	btn.TextSize = 13
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-	Instance.new("UIStroke", btn).Color = Color3.fromRGB(80, 120, 255)
-	btn.Parent = parent
-	local enabled = false
-	btn.MouseButton1Click:Connect(function()
-		enabled = not enabled
-		btn.Text = text .. (enabled and ": ON" or ": OFF")
-		btn.BackgroundColor3 = enabled and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
-	end)
-	return btn, function() return enabled end
-end
-
--- ===== ROW 1 (Noclip, Inf Jump, Fly UI, TP UI) =====
+-- ===== ROW 1 ===== (Noclip, Inf Jump, Fly UI, TP UI)
 local row1 = Instance.new("Frame")
 row1.Size = UDim2.new(1, 0, 0, 30)
 row1.BackgroundTransparency = 1
 row1.Parent = body
 
-local layout1 = Instance.new("UIListLayout", row1)
-layout1.FillDirection = Enum.FillDirection.Horizontal
-layout1.Padding = UDim.new(0, 8)
-layout1.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout1.VerticalAlignment = Enum.VerticalAlignment.Center
+local layoutRow1 = Instance.new("UIListLayout", row1)
+layoutRow1.FillDirection = Enum.FillDirection.Horizontal
+layoutRow1.Padding = UDim.new(0, 8)
+layoutRow1.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layoutRow1.VerticalAlignment = Enum.VerticalAlignment.Center
 
--- Buat ulang toggle untuk row1 (urutan baru)
-local noclipBtn, getNoclip = makeToggle(row1, "Noclip", 90)
-local infJumpBtn, getInfJump = makeToggle(row1, "Inf Jump", 90)
-local flyUIBtn, _ = makeToggle(row1, "Fly UI", 90)
-local tpUIBtn, _ = makeToggle(row1, "TP UI", 90)
+local noclipBtn, getNoclip = createToggleButton(row1, "Noclip", 90)
+local infJumpBtn, getInfJump = createToggleButton(row1, "Inf Jump", 90)
+local flyUIBtn, _ = createToggleButton(row1, "Fly UI", 90)
+local tpUIBtn, _ = createToggleButton(row1, "TP UI", 90)
 
--- ===== ROW 2 (God Mode, Instant Proximity, Infinite Zoom, Freecam) =====
+-- ===== ROW 2 ===== (God Mode, Instant Proximity, Infinite Zoom, Freecam)
 local row2 = Instance.new("Frame")
 row2.Size = UDim2.new(1, 0, 0, 30)
 row2.BackgroundTransparency = 1
 row2.Parent = body
 
-local layout2 = Instance.new("UIListLayout", row2)
-layout2.FillDirection = Enum.FillDirection.Horizontal
-layout2.Padding = UDim.new(0, 8)
-layout2.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout2.VerticalAlignment = Enum.VerticalAlignment.Center
+local layoutRow2 = Instance.new("UIListLayout", row2)
+layoutRow2.FillDirection = Enum.FillDirection.Horizontal
+layoutRow2.Padding = UDim.new(0, 8)
+layoutRow2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layoutRow2.VerticalAlignment = Enum.VerticalAlignment.Center
 
-local godModeBtn, getGodMode = makeToggle(row2, "God Mode", 90)
-local instantProxBtn, getInstantProx = makeToggle(row2, "Inst Prox", 90)
-local infZoomBtn, getInfZoom = makeToggle(row2, "Inf Zoom", 90)
--- Hubungkan infiniteZoomEnabled dengan tombol
-infZoomBtn.MouseButton1Click:Connect(function()
-	-- toggle state sudah di handle oleh makeToggle, kita sync variabel
-	infiniteZoomEnabled = not infiniteZoomEnabled
-	-- Update tampilan tombol
-	infZoomBtn.Text = "Inf Zoom" .. (infiniteZoomEnabled and ": ON" or ": OFF")
-	infZoomBtn.BackgroundColor3 = infiniteZoomEnabled and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
-end)
--- Override getter
-local function getInfZoomState() return infiniteZoomEnabled end
+local godModeBtn, getGodMode = createToggleButton(row2, "God Mode", 90)
+local instantProxBtn, getInstantProx = createToggleButton(row2, "Instant Prox", 90)
+local infiniteZoomBtn, getInfiniteZoom = createToggleButton(row2, "Infinite Zoom", 90)
+local freecamBtn, getFreecam = createToggleButton(row2, "Freecam", 90)
 
-local freecamBtn, getFreecam = makeToggle(row2, "Freecam", 90)
-
--- ===== ROW 3 (FPS UI, Script Library) =====
+-- ===== ROW 3 ===== (FPS UI, Script Library UI)
 local row3 = Instance.new("Frame")
 row3.Size = UDim2.new(1, 0, 0, 30)
 row3.BackgroundTransparency = 1
 row3.Parent = body
 
-local layout3 = Instance.new("UIListLayout", row3)
-layout3.FillDirection = Enum.FillDirection.Horizontal
-layout3.Padding = UDim.new(0, 8)
-layout3.HorizontalAlignment = Enum.HorizontalAlignment.Center
-layout3.VerticalAlignment = Enum.VerticalAlignment.Center
+local layoutRow3 = Instance.new("UIListLayout", row3)
+layoutRow3.FillDirection = Enum.FillDirection.Horizontal
+layoutRow3.Padding = UDim.new(0, 8)
+layoutRow3.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layoutRow3.VerticalAlignment = Enum.VerticalAlignment.Center
 
-local fpsUIBtn, _ = makeToggle(row3, "FPS UI", 130)
-local scriptLibBtn = Instance.new("TextButton") -- bukan toggle, hanya buka UI
-scriptLibBtn.Size = UDim2.new(0, 130, 0, 28)
-scriptLibBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-scriptLibBtn.Text = "Script Library"
-scriptLibBtn.TextColor3 = Color3.fromRGB(210, 215, 230)
-scriptLibBtn.Font = Enum.Font.GothamMedium
-scriptLibBtn.TextSize = 13
-Instance.new("UICorner", scriptLibBtn).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", scriptLibBtn).Color = Color3.fromRGB(80, 120, 255)
-scriptLibBtn.Parent = row3
-scriptLibBtn.MouseButton1Click:Connect(function()
-	-- Placeholder: nanti buka UI script library
-	print("Script Library button clicked")
-end)
+local fpsUIBtn, _ = createToggleButton(row3, "FPS UI", 90)
+local scriptLibBtn, _ = createToggleButton(row3, "Script Lib", 90)
 
 -- Minimized icon for main menu (shoe)
 local shoe = Instance.new("TextButton")
@@ -543,7 +517,7 @@ task.spawn(function()
 	end
 end)
 
--- God Mode (sederhana: set health to huge)
+-- God Mode (Invincibility + regen cepat)
 task.spawn(function()
 	local hum = waitForHumanoid()
 	player.CharacterAdded:Connect(function()
@@ -552,21 +526,23 @@ task.spawn(function()
 	while running do
 		if getGodMode() and hum and hum.Parent then
 			hum.MaxHealth = math.huge
-			hum.Health = math.huge
+			hum.Health = hum.MaxHealth
+			-- Regen cepat
+			hum.Health = hum.MaxHealth
 		elseif hum and hum.Parent then
-			hum.MaxHealth = 100
+			-- Kembalikan max health normal jika perlu (tidak diimplementasikan)
 		end
-		task.wait(0.5)
+		task.wait(0.1)
 	end
 end)
 
--- Instant Proximity (placeholder: set ProximityPrompt MaxActivationDistance besar)
+-- Instant Proximity (mengatur HoldDuration ke 0 untuk semua ProximityPrompt)
 task.spawn(function()
 	while running do
 		if getInstantProx() then
 			for _, v in ipairs(workspace:GetDescendants()) do
 				if v:IsA("ProximityPrompt") then
-					v.MaxActivationDistance = 100
+					v.HoldDuration = 0
 				end
 			end
 		end
@@ -574,66 +550,73 @@ task.spawn(function()
 	end
 end)
 
--- Infinite Zoom (sederhana: set CameraMaxZoomDistance)
+-- Infinite Zoom
 task.spawn(function()
 	while running do
-		if infiniteZoomEnabled then
-			Camera.MaxZoomDistance = 10000
+		if getInfiniteZoom() then
+			Camera.MaxAxisFieldOfView = 180
+			Camera.FieldOfView = 120 -- contoh, bisa diatur
 		else
-			Camera.MaxZoomDistance = 400
+			Camera.MaxAxisFieldOfView = 120 -- default
 		end
-		task.wait(1)
+		task.wait(0.5)
 	end
 end)
 
--- Freecam (sederhana, menggunakan script freecam biasa)
+-- Freecam (sederhana)
 local freecamActive = false
-local freecamConnection
-local function enableFreecam(enable)
-	if enable then
-		if freecamConnection then freecamConnection:Disconnect() end
-		local cam = Camera
-		local focus = cam.Focus
-		local cf = cam.CFrame
-		local speed = 1
-		freecamConnection = RunService.RenderStepped:Connect(function(dt)
-			if not getFreecam() then
-				freecamConnection:Disconnect()
-				freecamConnection = nil
-				cam.CameraType = Enum.CameraType.Custom
-				return
-			end
-			-- simple movement
-			local move = Vector3.new()
-			if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + Vector3.new(0,0,-1) end
-			if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move + Vector3.new(0,0,1) end
-			if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move + Vector3.new(-1,0,0) end
-			if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + Vector3.new(1,0,0) end
-			if UserInputService:IsKeyDown(Enum.KeyCode.Q) then move = move + Vector3.new(0,1,0) end
-			if UserInputService:IsKeyDown(Enum.KeyCode.E) then move = move + Vector3.new(0,-1,0) end
-			if move.Magnitude > 0 then
-				move = move.Unit * speed * dt * 50
-				cf = cf + move
-			end
-			-- rotation
-			local mouseDelta = UserInputService:GetMouseDelta()
-			cf = cf * CFrame.Angles(0, -math.rad(mouseDelta.X * 0.2), 0)
-			cf = cf * CFrame.Angles(-math.rad(mouseDelta.Y * 0.2), 0, 0)
-			cam.CFrame = cf
-		end)
-	else
-		if freecamConnection then freecamConnection:Disconnect() freecamConnection = nil end
-		Camera.CameraType = Enum.CameraType.Custom
+local freecamPart = Instance.new("Part")
+freecamPart.Anchored = true
+freecamPart.CanCollide = false
+freecamPart.Transparency = 1
+freecamPart.Size = Vector3.new(1,1,1)
+freecamPart.Parent = workspace
+
+local freecamInfo = Instance.new("TextLabel")
+freecamInfo.Size = UDim2.fromOffset(200, 30)
+freecamInfo.Position = UDim2.new(0, 10, 0, 10)
+freecamInfo.BackgroundColor3 = Color3.fromRGB(20,20,24)
+freecamInfo.TextColor3 = Color3.new(1,1,1)
+freecamInfo.Text = "Freecam ON (WASD/SPACE/CTRL)"
+freecamInfo.Font = Enum.Font.GothamBold
+freecamInfo.TextSize = 14
+freecamInfo.Visible = false
+freecamInfo.Parent = gui
+makeDraggable(freecamInfo, freecamInfo)
+
+local function updateFreecam()
+	if freecamActive then
+		local move = Vector3.new(
+			(UserInputService:IsKeyDown(Enum.KeyCode.D) and 1 or 0) - (UserInputService:IsKeyDown(Enum.KeyCode.A) and 1 or 0),
+			(UserInputService:IsKeyDown(Enum.KeyCode.Space) and 1 or 0) - (UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) and 1 or 0),
+			(UserInputService:IsKeyDown(Enum.KeyCode.S) and 1 or 0) - (UserInputService:IsKeyDown(Enum.KeyCode.W) and 1 or 0)
+		) * 0.5
+		freecamPart.CFrame = freecamPart.CFrame + move
+		Camera.CFrame = CFrame.new(freecamPart.Position, freecamPart.Position + Camera.CFrame.LookVector)
 	end
 end
--- Hubungkan freecam toggle
+
+RunService.RenderStepped:Connect(updateFreecam)
+
 freecamBtn.MouseButton1Click:Connect(function()
-	-- toggle sudah di handle, tapi kita perlu trigger freecam
-	local enabled = getFreecam()
-	enableFreecam(enabled)
+	freecamActive = not freecamActive
+	if freecamActive then
+		local char = player.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			freecamPart.CFrame = char.HumanoidRootPart.CFrame
+		end
+		freecamInfo.Visible = true
+	else
+		freecamInfo.Visible = false
+		-- Kembalikan kamera ke karakter
+		local char = player.Character
+		if char and char:FindFirstChild("Humanoid") then
+			Camera.CameraSubject = char.Humanoid
+		end
+	end
 end)
 
--- ========== FLY UI (sama seperti sebelumnya) ==========
+-- ========== FLY UI ==========
 local function createFlyUI()
 	local flyGui = Instance.new("ScreenGui")
 	flyGui.Name = flyGUIName
@@ -875,7 +858,7 @@ flyUIBtn.MouseButton1Click:Connect(function()
 	setFlyUIVisible(newState)
 end)
 
--- ========== TELEPORT UI REDESIGN ==========
+-- ========== TELEPORT UI (baru dengan minimize, gear, player list) ==========
 _G.AzkaTeleports = _G.AzkaTeleports or {}
 
 local function createTeleportUI()
@@ -887,7 +870,7 @@ local function createTeleportUI()
 
 	-- Main Teleport Panel
 	local main = Instance.new("Frame")
-	main.Size = UDim2.fromOffset(400, 500)
+	main.Size = UDim2.fromOffset(400, 500)  -- diperbesar
 	main.Position = UDim2.new(0.5, -200, 0.3, -250)
 	main.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 	main.Visible = false
@@ -896,47 +879,47 @@ local function createTeleportUI()
 	Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
 	Instance.new("UIStroke", main).Color = Color3.fromRGB(80, 120, 255)
 
-	-- Title bar dengan gear dan minimize
+	-- Title bar
 	local tbar = Instance.new("Frame")
 	tbar.Size = UDim2.new(1, 0, 0, 36)
 	tbar.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
 	tbar.Parent = main
 	Instance.new("UICorner", tbar).CornerRadius = UDim.new(0, 12)
 
+	-- Gear button di kiri
+	local tgear = Instance.new("TextButton")
+	tgear.Size = UDim2.fromOffset(36, 24)
+	tgear.Position = UDim2.new(0, 12, 0.5, -12)
+	tgear.Text = "⚙"
+	tgear.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+	tgear.TextColor3 = Color3.fromRGB(200, 205, 220)
+	tgear.Font = Enum.Font.GothamBold
+	tgear.TextSize = 20
+	Instance.new("UICorner", tgear).CornerRadius = UDim.new(0, 8)
+	tgear.Parent = tbar
+
 	local ttitle = Instance.new("TextLabel")
 	ttitle.BackgroundTransparency = 1
 	ttitle.Size = UDim2.new(1, -120, 1, 0)
-	ttitle.Position = UDim2.new(0, 12, 0, 0)
+	ttitle.Position = UDim2.new(0, 50, 0, 0)
 	ttitle.Text = "Teleport Menu"
 	ttitle.Font = Enum.Font.GothamBold
 	ttitle.TextSize = 18
 	ttitle.TextColor3 = Color3.fromRGB(230, 235, 255)
-	ttitle.TextXAlignment = Enum.TextXAlignment.Left
+	ttitle.TextXAlignment = Enum.TextXAlignment.Center
 	ttitle.Parent = tbar
 
-	-- Gear button
-	local tpGear = Instance.new("TextButton")
-	tpGear.Size = UDim2.fromOffset(36, 24)
-	tpGear.Position = UDim2.new(1, -124, 0.5, -12)
-	tpGear.Text = "⚙"
-	tpGear.Font = Enum.Font.GothamBold
-	tpGear.TextSize = 18
-	tpGear.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-	tpGear.TextColor3 = Color3.fromRGB(200, 205, 220)
-	Instance.new("UICorner", tpGear).CornerRadius = UDim.new(0, 8)
-	tpGear.Parent = tbar
-
-	-- Minimize button
-	local tpMin = Instance.new("TextButton")
-	tpMin.Size = UDim2.fromOffset(36, 24)
-	tpMin.Position = UDim2.new(1, -84, 0.5, -12)
-	tpMin.Text = "—"
-	tpMin.Font = Enum.Font.GothamBold
-	tpMin.TextSize = 20
-	tpMin.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-	tpMin.TextColor3 = Color3.fromRGB(200, 205, 220)
-	Instance.new("UICorner", tpMin).CornerRadius = UDim.new(0, 8)
-	tpMin.Parent = tbar
+	-- Minimize button (kiri dari close)
+	local tmin = Instance.new("TextButton")
+	tmin.Size = UDim2.fromOffset(36, 24)
+	tmin.Position = UDim2.new(1, -84, 0.5, -12)
+	tmin.Text = "—"
+	tmin.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+	tmin.TextColor3 = Color3.fromRGB(200, 205, 220)
+	tmin.Font = Enum.Font.GothamBold
+	tmin.TextSize = 20
+	Instance.new("UICorner", tmin).CornerRadius = UDim.new(0, 8)
+	tmin.Parent = tbar
 
 	-- Close button
 	local tpClose = Instance.new("TextButton")
@@ -948,94 +931,62 @@ local function createTeleportUI()
 	Instance.new("UICorner", tpClose).CornerRadius = UDim.new(0, 8)
 	tpClose.Parent = tbar
 
-	-- Minimized circle (TP)
-	local tpCircle = Instance.new("TextButton")
-	tpCircle.Name = "TPCircle"
-	tpCircle.Visible = false
-	tpCircle.Text = "TP"
-	tpCircle.Font = Enum.Font.GothamBold
-	tpCircle.TextSize = 18
-	tpCircle.Size = UDim2.fromOffset(50, 50)
-	tpCircle.Position = UDim2.new(0.5, -25, 0.45, -25)
-	tpCircle.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-	tpCircle.TextColor3 = Color3.fromRGB(220, 230, 255)
-	Instance.new("UICorner", tpCircle).CornerRadius = UDim.new(1, 0)
-	Instance.new("UIStroke", tpCircle).Color = Color3.fromRGB(80, 120, 255)
-	tpCircle.Parent = tpGui
-	makeDraggable(tpCircle, tpCircle)
+	-- Body dengan tab control (Saved Teleports dan Live Players)
+	local tabFrame = Instance.new("Frame")
+	tabFrame.Size = UDim2.new(1, -20, 0, 40)
+	tabFrame.Position = UDim2.new(0, 10, 0, 44)
+	tabFrame.BackgroundTransparency = 1
+	tabFrame.Parent = main
 
-	tpMin.MouseButton1Click:Connect(function()
-		main.Visible = false
-		tpCircle.Visible = true
-	end)
-	tpCircle.MouseButton1Click:Connect(function()
-		tpCircle.Visible = false
-		main.Visible = true
-	end)
-
-	-- Konten utama dengan tab
-	local tabBar = Instance.new("Frame")
-	tabBar.Size = UDim2.new(1, -20, 0, 40)
-	tabBar.Position = UDim2.new(0, 10, 0, 44)
-	tabBar.BackgroundTransparency = 1
-	tabBar.Parent = main
-
-	local tabLayout = Instance.new("UIListLayout", tabBar)
+	local tabLayout = Instance.new("UIListLayout", tabFrame)
 	tabLayout.FillDirection = Enum.FillDirection.Horizontal
 	tabLayout.Padding = UDim.new(0, 10)
 	tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 	local savedTab = Instance.new("TextButton")
-	savedTab.Size = UDim2.new(0, 100, 0, 30)
+	savedTab.Size = UDim2.new(0, 150, 0, 30)
 	savedTab.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
-	savedTab.Text = "Saved"
+	savedTab.Text = "Saved Teleports"
 	savedTab.TextColor3 = Color3.new(1,1,1)
 	savedTab.Font = Enum.Font.GothamBold
 	savedTab.TextSize = 14
 	Instance.new("UICorner", savedTab).CornerRadius = UDim.new(0, 8)
-	savedTab.Parent = tabBar
+	savedTab.Parent = tabFrame
 
 	local playersTab = Instance.new("TextButton")
-	playersTab.Size = UDim2.new(0, 100, 0, 30)
+	playersTab.Size = UDim2.new(0, 150, 0, 30)
 	playersTab.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-	playersTab.Text = "Players"
-	playersTab.TextColor3 = Color3.fromRGB(210, 215, 230)
+	playersTab.Text = "Live Players"
+	playersTab.TextColor3 = Color3.new(1,1,1)
 	playersTab.Font = Enum.Font.GothamBold
 	playersTab.TextSize = 14
 	Instance.new("UICorner", playersTab).CornerRadius = UDim.new(0, 8)
-	playersTab.Parent = tabBar
+	playersTab.Parent = tabFrame
 
-	-- Konten Saved
-	local savedContent = Instance.new("ScrollingFrame")
-	savedContent.Size = UDim2.new(1, -20, 1, -90)
-	savedContent.Position = UDim2.new(0, 10, 0, 90)
-	savedContent.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-	savedContent.ScrollBarThickness = 6
-	savedContent.CanvasSize = UDim2.new(0, 0, 0, 0)
-	Instance.new("UICorner", savedContent).CornerRadius = UDim.new(0, 8)
-	savedContent.Parent = main
-	savedContent.Visible = true
+	-- Kontainer untuk konten tab
+	local contentFrame = Instance.new("Frame")
+	contentFrame.Size = UDim2.new(1, -20, 0, 350)
+	contentFrame.Position = UDim2.new(0, 10, 0, 90)
+	contentFrame.BackgroundTransparency = 1
+	contentFrame.Parent = main
+	contentFrame.AutomaticSize = Enum.AutomaticSize.Y
 
-	local savedLayout = Instance.new("UIListLayout", savedContent)
+	-- Tab Saved Teleports
+	local savedContainer = Instance.new("ScrollingFrame")
+	savedContainer.Size = UDim2.new(1, 0, 1, 0)
+	savedContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+	savedContainer.BackgroundTransparency = 0
+	savedContainer.ScrollBarThickness = 6
+	savedContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+	savedContainer.Visible = true
+	savedContainer.Parent = contentFrame
+	Instance.new("UICorner", savedContainer).CornerRadius = UDim.new(0, 8)
+
+	local savedLayout = Instance.new("UIListLayout", savedContainer)
 	savedLayout.Padding = UDim.new(0, 8)
 	savedLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-	-- Konten Players
-	local playersContent = Instance.new("ScrollingFrame")
-	playersContent.Size = UDim2.new(1, -20, 1, -90)
-	playersContent.Position = UDim2.new(0, 10, 0, 90)
-	playersContent.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-	playersContent.ScrollBarThickness = 6
-	playersContent.CanvasSize = UDim2.new(0, 0, 0, 0)
-	Instance.new("UICorner", playersContent).CornerRadius = UDim.new(0, 8)
-	playersContent.Parent = main
-	playersContent.Visible = false
-
-	local playersLayout = Instance.new("UIListLayout", playersContent)
-	playersLayout.Padding = UDim.new(0, 8)
-	playersLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-	-- Tombol Save (di dalam savedContent)
+	-- Tombol Save Teleport di dalam savedContainer
 	local saveBtn = Instance.new("TextButton")
 	saveBtn.Size = UDim2.new(1, -10, 0, 40)
 	saveBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
@@ -1044,83 +995,75 @@ local function createTeleportUI()
 	saveBtn.Font = Enum.Font.GothamBold
 	saveBtn.TextSize = 16
 	Instance.new("UICorner", saveBtn).CornerRadius = UDim.new(0, 8)
-	saveBtn.Parent = savedContent
+	saveBtn.Parent = savedContainer
 
-	-- Panel Save
-	local saveSub = Instance.new("Frame")
-	saveSub.Size = UDim2.fromOffset(300, 220)
-	saveSub.Position = UDim2.new(0.5, -150, 0.5, -110)
-	saveSub.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
-	saveSub.Visible = false
-	saveSub.Parent = tpGui
-	makeDraggable(saveSub, saveSub)
-	Instance.new("UICorner", saveSub).CornerRadius = UDim.new(0, 12)
-	Instance.new("UIStroke", saveSub).Color = Color3.fromRGB(80, 120, 255)
+	-- List saved teleports
+	local listSaved = Instance.new("ScrollingFrame")
+	listSaved.Size = UDim2.new(1, -10, 0, 250)
+	listSaved.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+	listSaved.BackgroundTransparency = 0
+	listSaved.ScrollBarThickness = 6
+	listSaved.CanvasSize = UDim2.new(0, 0, 0, 0)
+	listSaved.Parent = savedContainer
+	Instance.new("UICorner", listSaved).CornerRadius = UDim.new(0, 8)
 
-	local subTitle = Instance.new("TextLabel")
-	subTitle.Size = UDim2.new(1, 0, 0, 40)
-	subTitle.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-	subTitle.Text = "Save Teleport"
-	subTitle.Font = Enum.Font.GothamBold
-	subTitle.TextSize = 18
-	subTitle.TextColor3 = Color3.fromRGB(230, 235, 255)
-	Instance.new("UICorner", subTitle).CornerRadius = UDim.new(0, 12)
-	subTitle.Parent = saveSub
+	local listSavedLayout = Instance.new("UIListLayout", listSaved)
+	listSavedLayout.Padding = UDim.new(0, 5)
+	listSavedLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-	local coord = Instance.new("TextLabel")
-	coord.Size = UDim2.new(1, -20, 0, 30)
-	coord.Position = UDim2.new(0, 10, 0, 50)
-	coord.BackgroundTransparency = 1
-	coord.Text = "Position: 0, 0, 0"
-	coord.TextColor3 = Color3.fromRGB(255, 255, 255)
-	coord.Font = Enum.Font.GothamBold
-	coord.TextSize = 16
-	coord.Parent = saveSub
+	-- Pagination untuk saved teleports
+	local savedPageFrame = Instance.new("Frame")
+	savedPageFrame.Size = UDim2.new(1, -10, 0, 30)
+	savedPageFrame.BackgroundTransparency = 1
+	savedPageFrame.Parent = savedContainer
 
-	local nameBox = Instance.new("TextBox")
-	nameBox.Size = UDim2.new(1, -20, 0, 36)
-	nameBox.Position = UDim2.new(0, 10, 0, 90)
-	nameBox.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-	nameBox.PlaceholderText = "Nama"
-	nameBox.Text = ""
-	nameBox.TextColor3 = Color3.new(1,1,1)
-	Instance.new("UICorner", nameBox).CornerRadius = UDim.new(0, 8)
-	nameBox.Parent = saveSub
+	local savedPageLayout = Instance.new("UIListLayout", savedPageFrame)
+	savedPageLayout.FillDirection = Enum.FillDirection.Horizontal
+	savedPageLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	savedPageLayout.Padding = UDim.new(0, 5)
 
-	local saveSubBtn = Instance.new("TextButton")
-	saveSubBtn.Size = UDim2.new(0, 100, 0, 40)
-	saveSubBtn.Position = UDim2.new(0, 10, 0, 140)
-	saveSubBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
-	saveSubBtn.Text = "Save"
-	saveSubBtn.TextColor3 = Color3.new(1,1,1)
-	saveSubBtn.Font = Enum.Font.GothamBold
-	saveSubBtn.TextSize = 16
-	Instance.new("UICorner", saveSubBtn).CornerRadius = UDim.new(0, 8)
-	saveSubBtn.Parent = saveSub
+	-- Tab Live Players
+	local playersContainer = Instance.new("ScrollingFrame")
+	playersContainer.Size = UDim2.new(1, 0, 1, 0)
+	playersContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+	playersContainer.BackgroundTransparency = 0
+	playersContainer.ScrollBarThickness = 6
+	playersContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
+	playersContainer.Visible = false
+	playersContainer.Parent = contentFrame
+	Instance.new("UICorner", playersContainer).CornerRadius = UDim.new(0, 8)
 
-	local closeSubBtn = Instance.new("TextButton")
-	closeSubBtn.Size = UDim2.new(0, 100, 0, 40)
-	closeSubBtn.Position = UDim2.new(1, -110, 0, 140)
-	closeSubBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-	closeSubBtn.Text = "Close"
-	closeSubBtn.TextColor3 = Color3.new(1,1,1)
-	closeSubBtn.Font = Enum.Font.GothamBold
-	closeSubBtn.TextSize = 16
-	Instance.new("UICorner", closeSubBtn).CornerRadius = UDim.new(0, 8)
-	closeSubBtn.Parent = saveSub
+	local playersLayout = Instance.new("UIListLayout", playersContainer)
+	playersLayout.Padding = UDim.new(0, 5)
+	playersLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-	-- Fungsi refresh saved list
-	local function refreshSaved()
-		for _, child in ipairs(savedContent:GetChildren()) do
-			if child:IsA("Frame") and child ~= saveBtn then child:Destroy() end
+	-- Fungsi refresh saved teleports
+	local savedItemsPerPage = 5
+	local savedCurrentPage = 1
+	local savedTotalPages = 1
+
+	local function refreshSavedList()
+		-- Hapus semua item di listSaved kecuali layout
+		for _, child in ipairs(listSaved:GetChildren()) do
+			if child:IsA("Frame") then child:Destroy() end
 		end
+		for _, child in ipairs(savedPageFrame:GetChildren()) do
+			if child:IsA("TextButton") then child:Destroy() end
+		end
+
 		local teleports = _G.AzkaTeleports
-		for i, data in ipairs(teleports) do
+		savedTotalPages = math.max(1, math.ceil(#teleports / savedItemsPerPage))
+		savedCurrentPage = math.clamp(savedCurrentPage, 1, savedTotalPages)
+		local start = (savedCurrentPage-1)*savedItemsPerPage + 1
+		local finish = math.min(start + savedItemsPerPage - 1, #teleports)
+
+		for i = start, finish do
+			local data = teleports[i]
 			local item = Instance.new("Frame")
 			item.Size = UDim2.new(1, -10, 0, 40)
 			item.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 			Instance.new("UICorner", item).CornerRadius = UDim.new(0, 6)
-			item.Parent = savedContent
+			item.Parent = listSaved
 
 			local name = Instance.new("TextLabel")
 			name.Size = UDim2.new(0.5, -5, 1, 0)
@@ -1164,94 +1107,172 @@ local function createTeleportUI()
 			del.Parent = item
 			del.MouseButton1Click:Connect(function()
 				table.remove(_G.AzkaTeleports, i)
-				refreshSaved()
+				refreshSavedList()
 			end)
 		end
-		-- Update canvas
+
+		-- Pagination buttons
+		for p = 1, savedTotalPages do
+			local pageBtn = Instance.new("TextButton")
+			pageBtn.Size = UDim2.fromOffset(30, 30)
+			pageBtn.BackgroundColor3 = (p == savedCurrentPage) and Color3.fromRGB(80,120,255) or Color3.fromRGB(50,50,60)
+			pageBtn.Text = tostring(p)
+			pageBtn.TextColor3 = Color3.new(1,1,1)
+			pageBtn.Font = Enum.Font.GothamBold
+			pageBtn.TextSize = 14
+			Instance.new("UICorner", pageBtn).CornerRadius = UDim.new(0, 6)
+			pageBtn.Parent = savedPageFrame
+			pageBtn.MouseButton1Click:Connect(function()
+				savedCurrentPage = p
+				refreshSavedList()
+			end)
+		end
+
+		-- Update canvas size listSaved
 		local h = 0
-		for _, ch in ipairs(savedContent:GetChildren()) do
+		for _, ch in ipairs(listSaved:GetChildren()) do
 			if ch:IsA("Frame") then
-				h = h + ch.Size.Y.Offset + savedLayout.Padding.Offset
+				h = h + ch.Size.Y.Offset + listSavedLayout.Padding.Offset
 			end
 		end
-		savedContent.CanvasSize = UDim2.new(0,0,0,h+40)
+		listSaved.CanvasSize = UDim2.new(0,0,0,h)
 	end
 
-	-- Fungsi refresh players list
-	local function refreshPlayers()
-		for _, child in ipairs(playersContent:GetChildren()) do
+	-- Fungsi refresh live players
+	local function refreshPlayersList()
+		for _, child in ipairs(playersContainer:GetChildren()) do
 			if child:IsA("Frame") then child:Destroy() end
 		end
+
 		for _, plr in ipairs(Players:GetPlayers()) do
 			if plr ~= player then
 				local item = Instance.new("Frame")
-				item.Size = UDim2.new(1, -10, 0, 40)
+				item.Size = UDim2.new(1, -10, 0, 50)
 				item.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 				Instance.new("UICorner", item).CornerRadius = UDim.new(0, 6)
-				item.Parent = playersContent
+				item.Parent = playersContainer
 
 				local name = Instance.new("TextLabel")
-				name.Size = UDim2.new(0.6, -5, 1, 0)
-				name.Position = UDim2.new(0, 5, 0, 0)
+				name.Size = UDim2.new(1, -10, 0, 20)
+				name.Position = UDim2.new(0, 5, 0, 2)
 				name.BackgroundTransparency = 1
-				name.Text = plr.Name
+				name.Text = plr.Name .. (plr.DisplayName ~= plr.Name and " ("..plr.DisplayName..")" or "")
 				name.TextColor3 = Color3.new(1,1,1)
 				name.Font = Enum.Font.GothamBold
 				name.TextSize = 14
 				name.TextXAlignment = Enum.TextXAlignment.Left
 				name.Parent = item
 
-				local tp = Instance.new("TextButton")
-				tp.Size = UDim2.new(0, 100, 0, 30)
-				tp.Position = UDim2.new(1, -105, 0.5, -15)
-				tp.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
-				tp.Text = "Teleport"
-				tp.TextColor3 = Color3.new(1,1,1)
-				tp.Font = Enum.Font.GothamMedium
-				tp.TextSize = 12
-				Instance.new("UICorner", tp).CornerRadius = UDim.new(0, 6)
-				tp.Parent = item
-				tp.MouseButton1Click:Connect(function()
-					local char = plr.Character
-					if char and char:FindFirstChild("HumanoidRootPart") then
-						local myChar = player.Character
-						if myChar and myChar:FindFirstChild("HumanoidRootPart") then
-							myChar.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame
+				local tpBtn = Instance.new("TextButton")
+				tpBtn.Size = UDim2.new(0, 100, 0, 30)
+				tpBtn.Position = UDim2.new(0.5, -50, 0, 25)
+				tpBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
+				tpBtn.Text = "Teleport"
+				tpBtn.TextColor3 = Color3.new(1,1,1)
+				tpBtn.Font = Enum.Font.GothamMedium
+				tpBtn.TextSize = 14
+				Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 6)
+				tpBtn.Parent = item
+				tpBtn.MouseButton1Click:Connect(function()
+					if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local char = player.Character
+						if char and char:FindFirstChild("HumanoidRootPart") then
+							char.HumanoidRootPart.CFrame = plr.Character.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
 						end
 					end
 				end)
 			end
 		end
+
 		local h = 0
-		for _, ch in ipairs(playersContent:GetChildren()) do
+		for _, ch in ipairs(playersContainer:GetChildren()) do
 			if ch:IsA("Frame") then
 				h = h + ch.Size.Y.Offset + playersLayout.Padding.Offset
 			end
 		end
-		playersContent.CanvasSize = UDim2.new(0,0,0,h)
+		playersContainer.CanvasSize = UDim2.new(0,0,0,h)
 	end
 
 	-- Tab switching
 	savedTab.MouseButton1Click:Connect(function()
 		savedTab.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
-		savedTab.TextColor3 = Color3.new(1,1,1)
 		playersTab.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-		playersTab.TextColor3 = Color3.fromRGB(210, 215, 230)
-		savedContent.Visible = true
-		playersContent.Visible = false
-		refreshSaved()
-	end)
-	playersTab.MouseButton1Click:Connect(function()
-		playersTab.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
-		playersTab.TextColor3 = Color3.new(1,1,1)
-		savedTab.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-		savedTab.TextColor3 = Color3.fromRGB(210, 215, 230)
-		savedContent.Visible = false
-		playersContent.Visible = true
-		refreshPlayers()
+		savedContainer.Visible = true
+		playersContainer.Visible = false
+		refreshSavedList()
 	end)
 
-	-- Save button
+	playersTab.MouseButton1Click:Connect(function()
+		playersTab.BackgroundColor3 = Color3.fromRGB(80, 120, 255)
+		savedTab.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+		savedContainer.Visible = false
+		playersContainer.Visible = true
+		refreshPlayersList()
+	end)
+
+	-- Panel Save (sub)
+	local saveSub = Instance.new("Frame")
+	saveSub.Size = UDim2.fromOffset(300,220)
+	saveSub.Position = UDim2.new(0.5,-150,0.5,-110)
+	saveSub.BackgroundColor3 = Color3.fromRGB(20,20,24)
+	saveSub.Visible = false
+	saveSub.Parent = tpGui
+	makeDraggable(saveSub, saveSub)
+	Instance.new("UICorner", saveSub).CornerRadius = UDim.new(0,12)
+	Instance.new("UIStroke", saveSub).Color = Color3.fromRGB(80,120,255)
+
+	local subTitle = Instance.new("TextLabel")
+	subTitle.Size = UDim2.new(1,0,0,40)
+	subTitle.BackgroundColor3 = Color3.fromRGB(28,28,34)
+	subTitle.Text = "Save Teleport"
+	subTitle.Font = Enum.Font.GothamBold
+	subTitle.TextSize = 18
+	subTitle.TextColor3 = Color3.fromRGB(230,235,255)
+	Instance.new("UICorner", subTitle).CornerRadius = UDim.new(0,12)
+	subTitle.Parent = saveSub
+
+	local coord = Instance.new("TextLabel")
+	coord.Size = UDim2.new(1,-20,0,30)
+	coord.Position = UDim2.new(0,10,0,50)
+	coord.BackgroundTransparency = 1
+	coord.Text = "Position: 0, 0, 0"
+	coord.TextColor3 = Color3.fromRGB(255,255,255)
+	coord.Font = Enum.Font.GothamBold
+	coord.TextSize = 16
+	coord.Parent = saveSub
+
+	local nameBox = Instance.new("TextBox")
+	nameBox.Size = UDim2.new(1,-20,0,36)
+	nameBox.Position = UDim2.new(0,10,0,90)
+	nameBox.BackgroundColor3 = Color3.fromRGB(40,40,48)
+	nameBox.PlaceholderText = "Nama"
+	nameBox.Text = ""
+	nameBox.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", nameBox).CornerRadius = UDim.new(0,8)
+	nameBox.Parent = saveSub
+
+	local saveSubBtn = Instance.new("TextButton")
+	saveSubBtn.Size = UDim2.new(0,100,0,40)
+	saveSubBtn.Position = UDim2.new(0,10,0,140)
+	saveSubBtn.BackgroundColor3 = Color3.fromRGB(60,120,60)
+	saveSubBtn.Text = "Save"
+	saveSubBtn.TextColor3 = Color3.new(1,1,1)
+	saveSubBtn.Font = Enum.Font.GothamBold
+	saveSubBtn.TextSize = 16
+	Instance.new("UICorner", saveSubBtn).CornerRadius = UDim.new(0,8)
+	saveSubBtn.Parent = saveSub
+
+	local closeSubBtn = Instance.new("TextButton")
+	closeSubBtn.Size = UDim2.new(0,100,0,40)
+	closeSubBtn.Position = UDim2.new(1,-110,0,140)
+	closeSubBtn.BackgroundColor3 = Color3.fromRGB(200,60,60)
+	closeSubBtn.Text = "Close"
+	closeSubBtn.TextColor3 = Color3.new(1,1,1)
+	closeSubBtn.Font = Enum.Font.GothamBold
+	closeSubBtn.TextSize = 16
+	Instance.new("UICorner", closeSubBtn).CornerRadius = UDim.new(0,8)
+	closeSubBtn.Parent = saveSub
+
 	saveBtn.MouseButton1Click:Connect(function()
 		local pos = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position
 		if pos then
@@ -1269,7 +1290,7 @@ local function createTeleportUI()
 		local pos = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position
 		if pos then
 			table.insert(_G.AzkaTeleports, {name = name, pos = pos})
-			refreshSaved()
+			refreshSavedList()
 			saveSub.Visible = false
 			main.Visible = true
 			nameBox.Text = ""
@@ -1282,27 +1303,46 @@ local function createTeleportUI()
 		nameBox.Text = ""
 	end)
 
-	-- Initial refresh
-	refreshSaved()
-	-- Auto refresh player list setiap 5 detik
-	task.spawn(function()
-		while running do
-			task.wait(5)
-			if playersContent.Visible then
-				refreshPlayers()
-			end
-		end
+	-- Minimize untuk TP UI
+	local tpMinimized = false
+	local tpMinimizedIcon = Instance.new("TextButton")
+	tpMinimizedIcon.Name = "TPMinimized"
+	tpMinimizedIcon.Size = UDim2.fromOffset(40, 40)
+	tpMinimizedIcon.Position = UDim2.new(0.5, -20, 0.5, -20)
+	tpMinimizedIcon.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+	tpMinimizedIcon.Text = "TP"
+	tpMinimizedIcon.TextColor3 = Color3.fromRGB(220, 230, 255)
+	tpMinimizedIcon.Font = Enum.Font.GothamBold
+	tpMinimizedIcon.TextSize = 20
+	tpMinimizedIcon.Visible = false
+	Instance.new("UICorner", tpMinimizedIcon).CornerRadius = UDim.new(1, 0)
+	Instance.new("UIStroke", tpMinimizedIcon).Color = Color3.fromRGB(80, 120, 255)
+	tpMinimizedIcon.Parent = tpGui
+	makeDraggable(tpMinimizedIcon, tpMinimizedIcon)
+
+	tmin.MouseButton1Click:Connect(function()
+		main.Visible = false
+		tpMinimizedIcon.Visible = true
+		tpMinimized = true
 	end)
 
-	return tpGui, main, tpClose, tpGear
+	tpMinimizedIcon.MouseButton1Click:Connect(function()
+		tpMinimizedIcon.Visible = false
+		main.Visible = true
+		tpMinimized = false
+	end)
+
+	refreshSavedList()
+	return tpGui, main, tpClose, tpMinimizedIcon
 end
 
 -- Buat TP UI
-local tpGui, tpMain, tpClose, tpGear = createTeleportUI()
+local tpGui, tpMain, tpClose, tpMinimizedIcon = createTeleportUI()
 
--- Fungsi untuk mengatur visibilitas TP UI
+-- Fungsi untuk mengatur visibilitas TP UI (termasuk minimized icon)
 local function setTPUIVisible(flag)
 	tpMain.Visible = flag
+	tpMinimizedIcon.Visible = false  -- jika di-off, sembunyikan juga icon
 	tpUIBtn.Text = "TP UI" .. (flag and ": ON" or ": OFF")
 	tpUIBtn.BackgroundColor3 = flag and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
 end
@@ -1314,414 +1354,393 @@ end)
 
 -- Hubungkan tpUIBtn
 tpUIBtn.MouseButton1Click:Connect(function()
-	local newState = not tpMain.Visible
+	local newState = not tpMain.Visible and not tpMinimizedIcon.Visible
 	setTPUIVisible(newState)
-end)
-
--- ========== SETTINGS UI ==========
-local settingsGui = Instance.new("ScreenGui")
-settingsGui.Name = settingsGUIName
-settingsGui.ResetOnSpawn = false
-settingsGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-settingsGui.Parent = CoreGui
-
-local settingsFrame = Instance.new("Frame")
-settingsFrame.Size = UDim2.fromOffset(350, 500)
-settingsFrame.Position = UDim2.new(0.5, -175, 0.3, -250)
-settingsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
-settingsFrame.Visible = false
-settingsFrame.Parent = settingsGui
-makeDraggable(settingsFrame, settingsFrame)
-Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 12)
-Instance.new("UIStroke", settingsFrame).Color = Color3.fromRGB(80, 120, 255)
-
--- Title bar
-local setTitleBar = Instance.new("Frame")
-setTitleBar.Size = UDim2.new(1, 0, 0, 36)
-setTitleBar.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-setTitleBar.Parent = settingsFrame
-Instance.new("UICorner", setTitleBar).CornerRadius = UDim.new(0, 12)
-
-local setTitle = Instance.new("TextLabel")
-setTitle.BackgroundTransparency = 1
-setTitle.Size = UDim2.new(1, -44, 1, 0)
-setTitle.Position = UDim2.new(0, 12, 0, 0)
-setTitle.Text = "Settings"
-setTitle.Font = Enum.Font.GothamBold
-setTitle.TextSize = 18
-setTitle.TextColor3 = Color3.fromRGB(230, 235, 255)
-setTitle.TextXAlignment = Enum.TextXAlignment.Left
-setTitle.Parent = setTitleBar
-
-local setClose = Instance.new("TextButton")
-setClose.Size = UDim2.fromOffset(36, 24)
-setClose.Position = UDim2.new(1, -44, 0.5, -12)
-setClose.Text = "X"
-setClose.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
-setClose.TextColor3 = Color3.fromRGB(255, 220, 220)
-Instance.new("UICorner", setClose).CornerRadius = UDim.new(0, 8)
-setClose.Parent = setTitleBar
-
--- Body scrolling
-local setBody = Instance.new("ScrollingFrame")
-setBody.Size = UDim2.new(1, -20, 1, -50)
-setBody.Position = UDim2.new(0, 10, 0, 44)
-setBody.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-setBody.ScrollBarThickness = 6
-setBody.CanvasSize = UDim2.new(0, 0, 0, 0)
-Instance.new("UICorner", setBody).CornerRadius = UDim.new(0, 8)
-setBody.Parent = settingsFrame
-
-local setLayout = Instance.new("UIListLayout", setBody)
-setLayout.Padding = UDim.new(0, 8)
-setLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
--- Fungsi untuk menambah toggle di settings
-local function addToggle(text, default)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, -10, 0, 30)
-	btn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-	btn.Text = text .. ": OFF"
-	btn.TextColor3 = Color3.fromRGB(210, 215, 230)
-	btn.Font = Enum.Font.GothamMedium
-	btn.TextSize = 14
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-	btn.Parent = setBody
-	local enabled = false
-	btn.MouseButton1Click:Connect(function()
-		enabled = not enabled
-		btn.Text = text .. (enabled and ": ON" or ": OFF")
-		btn.BackgroundColor3 = enabled and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
-	end)
-	return btn, function() return enabled end
-end
-
--- Fungsi untuk menambah tombol aksi
-local function addActionButton(text, callback)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, -10, 0, 30)
-	btn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
-	btn.Text = text
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 14
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
-	btn.Parent = setBody
-	btn.MouseButton1Click:Connect(callback)
-end
-
--- Isi settings
-addToggle("User Info Display", false)
-addToggle("Live Character Stats", false)
-
--- Anti-AFK dengan timer
-local antiAfkBtn, getAntiAfk = addToggle("Anti-AFK System", false)
--- Timer input
-local timerFrame = Instance.new("Frame")
-timerFrame.Size = UDim2.new(1, -10, 0, 40)
-timerFrame.BackgroundTransparency = 1
-timerFrame.Visible = false
-timerFrame.Parent = setBody
-
-local timerLayout = Instance.new("UIListLayout", timerFrame)
-timerLayout.FillDirection = Enum.FillDirection.Horizontal
-timerLayout.Padding = UDim.new(0, 5)
-timerLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-local secBox = Instance.new("TextBox")
-secBox.Size = UDim2.new(0, 70, 0, 30)
-secBox.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-secBox.PlaceholderText = "Detik"
-secBox.Text = "0"
-secBox.TextColor3 = Color3.new(1,1,1)
-secBox.Font = Enum.Font.GothamMedium
-secBox.TextSize = 14
-Instance.new("UICorner", secBox).CornerRadius = UDim.new(0, 8)
-secBox.Parent = timerFrame
-
-local minBox = Instance.new("TextBox")
-minBox.Size = UDim2.new(0, 70, 0, 30)
-minBox.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-minBox.PlaceholderText = "Menit"
-minBox.Text = "10"
-minBox.TextColor3 = Color3.new(1,1,1)
-minBox.Font = Enum.Font.GothamMedium
-minBox.TextSize = 14
-Instance.new("UICorner", minBox).CornerRadius = UDim.new(0, 8)
-minBox.Parent = timerFrame
-
-local afkStatus = Instance.new("TextButton")
-afkStatus.Size = UDim2.new(0, 80, 0, 30)
-afkStatus.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-afkStatus.Text = "Online"
-afkStatus.TextColor3 = Color3.new(1,1,1)
-afkStatus.Font = Enum.Font.GothamBold
-afkStatus.TextSize = 14
-Instance.new("UICorner", afkStatus).CornerRadius = UDim.new(0, 8)
-afkStatus.Parent = timerFrame
-
-antiAfkBtn.MouseButton1Click:Connect(function()
-	-- toggle state sudah dihandle, kita update visibility timer
-	timerFrame.Visible = getAntiAfk()
-end)
-
-afkStatus.MouseButton1Click:Connect(function()
-	if afkStatus.Text == "Online" then
-		afkStatus.Text = "AFK"
-		afkStatus.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
-		-- Mulai simulasi aktivitas
-	else
-		afkStatus.Text = "Online"
-		afkStatus.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-		-- Hentikan simulasi
+	if newState then
+		tpMain.Visible = true
 	end
 end)
 
-addToggle("Admin Bypass Detection", false)
-addActionButton("Server Hop & Rejoin", function() print("Server Hop") end)
-addActionButton("Character Respawn", function() player.Character:BreakJoints() end)
-addToggle("Bypass Anticheat", false)
-addActionButton("Scanner Backdoor", function() print("Scanner Backdoor") end)
-addActionButton("Scanner Remote", function() print("Scanner Remote") end)
-addActionButton("Dex Exploit", function() print("Dex Exploit") end)
-addToggle("Anti Fling", false)
-addToggle("Anti Void", false)
-addActionButton("Player Avatar Copy", function() print("Avatar Copy") end)
-addToggle("Fake Display Name", false)
+-- Update jika TP dalam keadaan minimized lalu di-off dari main menu, harus sembunyikan icon
+-- Sudah di-handle oleh setTPUIVisible
 
--- Update canvas size
-setBody.CanvasSize = UDim2.new(0,0,0, setLayout.AbsoluteContentSize.Y)
+-- ========== FPS UI (kerangka) ==========
+local function createFPSUI()
+	local fpsGui = Instance.new("ScreenGui")
+	fpsGui.Name = fpsGUIName
+	fpsGui.ResetOnSpawn = false
+	fpsGui.Parent = CoreGui
 
--- Hubungkan gear button di main menu
-gearBtn.MouseButton1Click:Connect(function()
-	settingsFrame.Visible = not settingsFrame.Visible
-end)
-tpGear.MouseButton1Click:Connect(function()
-	settingsFrame.Visible = not settingsFrame.Visible
-end)
--- Nanti untuk FPS UI juga akan ditambahkan gear
+	local main = Instance.new("Frame")
+	main.Size = UDim2.fromOffset(350, 400)
+	main.Position = UDim2.new(0.5, -175, 0.3, -200)
+	main.BackgroundColor3 = Color3.fromRGB(20,20,24)
+	main.Visible = false
+	main.Parent = fpsGui
+	makeDraggable(main, main)
+	Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
+	Instance.new("UIStroke", main).Color = Color3.fromRGB(80,120,255)
 
-setClose.MouseButton1Click:Connect(function()
-	settingsFrame.Visible = false
-end)
+	-- Title bar
+	local tbar = Instance.new("Frame")
+	tbar.Size = UDim2.new(1,0,0,36)
+	tbar.BackgroundColor3 = Color3.fromRGB(28,28,34)
+	tbar.Parent = main
+	Instance.new("UICorner", tbar).CornerRadius = UDim.new(0,12)
 
--- ========== FPS UI ==========
-local fpsGui = Instance.new("ScreenGui")
-fpsGui.Name = fpsGUIName
-fpsGui.ResetOnSpawn = false
-fpsGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-fpsGui.Parent = CoreGui
+	local tgear = Instance.new("TextButton")
+	tgear.Size = UDim2.fromOffset(36,24)
+	tgear.Position = UDim2.new(0,12,0.5,-12)
+	tgear.Text = "⚙"
+	tgear.BackgroundColor3 = Color3.fromRGB(40,40,48)
+	tgear.TextColor3 = Color3.fromRGB(200,205,220)
+	tgear.Font = Enum.Font.GothamBold
+	tgear.TextSize = 20
+	Instance.new("UICorner", tgear).CornerRadius = UDim.new(0,8)
+	tgear.Parent = tbar
 
-local fpsMain = Instance.new("Frame")
-fpsMain.Size = UDim2.fromOffset(400, 500)
-fpsMain.Position = UDim2.new(0.5, -200, 0.3, -250)
-fpsMain.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
-fpsMain.Visible = false
-fpsMain.Parent = fpsGui
-makeDraggable(fpsMain, fpsMain)
-Instance.new("UICorner", fpsMain).CornerRadius = UDim.new(0, 12)
-Instance.new("UIStroke", fpsMain).Color = Color3.fromRGB(80, 120, 255)
+	local ttitle = Instance.new("TextLabel")
+	ttitle.BackgroundTransparency = 1
+	ttitle.Size = UDim2.new(1,-120,1,0)
+	ttitle.Position = UDim2.new(0,50,0,0)
+	ttitle.Text = "FPS UI"
+	ttitle.Font = Enum.Font.GothamBold
+	ttitle.TextSize = 18
+	ttitle.TextColor3 = Color3.fromRGB(230,235,255)
+	ttitle.TextXAlignment = Enum.TextXAlignment.Center
+	ttitle.Parent = tbar
 
--- Title bar
-local fpsTitleBar = Instance.new("Frame")
-fpsTitleBar.Size = UDim2.new(1, 0, 0, 36)
-fpsTitleBar.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-fpsTitleBar.Parent = fpsMain
-Instance.new("UICorner", fpsTitleBar).CornerRadius = UDim.new(0, 12)
+	local tmin = Instance.new("TextButton")
+	tmin.Size = UDim2.fromOffset(36,24)
+	tmin.Position = UDim2.new(1,-84,0.5,-12)
+	tmin.Text = "—"
+	tmin.BackgroundColor3 = Color3.fromRGB(40,40,48)
+	tmin.TextColor3 = Color3.fromRGB(200,205,220)
+	tmin.Font = Enum.Font.GothamBold
+	tmin.TextSize = 20
+	Instance.new("UICorner", tmin).CornerRadius = UDim.new(0,8)
+	tmin.Parent = tbar
 
-local fpsTitle = Instance.new("TextLabel")
-fpsTitle.BackgroundTransparency = 1
-fpsTitle.Size = UDim2.new(1, -120, 1, 0)
-fpsTitle.Position = UDim2.new(0, 12, 0, 0)
-fpsTitle.Text = "FPS Menu"
-fpsTitle.Font = Enum.Font.GothamBold
-fpsTitle.TextSize = 18
-fpsTitle.TextColor3 = Color3.fromRGB(230, 235, 255)
-fpsTitle.TextXAlignment = Enum.TextXAlignment.Left
-fpsTitle.Parent = fpsTitleBar
+	local tclose = Instance.new("TextButton")
+	tclose.Size = UDim2.fromOffset(36,24)
+	tclose.Position = UDim2.new(1,-44,0.5,-12)
+	tclose.Text = "X"
+	tclose.BackgroundColor3 = Color3.fromRGB(60,30,30)
+	tclose.TextColor3 = Color3.fromRGB(255,220,220)
+	Instance.new("UICorner", tclose).CornerRadius = UDim.new(0,8)
+	tclose.Parent = tbar
 
--- Gear
-local fpsGear = Instance.new("TextButton")
-fpsGear.Size = UDim2.fromOffset(36, 24)
-fpsGear.Position = UDim2.new(1, -124, 0.5, -12)
-fpsGear.Text = "⚙"
-fpsGear.Font = Enum.Font.GothamBold
-fpsGear.TextSize = 18
-fpsGear.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-fpsGear.TextColor3 = Color3.fromRGB(200, 205, 220)
-Instance.new("UICorner", fpsGear).CornerRadius = UDim.new(0, 8)
-fpsGear.Parent = fpsTitleBar
-fpsGear.MouseButton1Click:Connect(function() settingsFrame.Visible = not settingsFrame.Visible end)
+	-- Body dengan scrolling
+	local body = Instance.new("ScrollingFrame")
+	body.Size = UDim2.new(1,-20,1,-50)
+	body.Position = UDim2.new(0,10,0,44)
+	body.BackgroundColor3 = Color3.fromRGB(30,30,36)
+	body.ScrollBarThickness = 6
+	body.CanvasSize = UDim2.new(0,0,0,0)
+	body.Parent = main
+	Instance.new("UICorner", body).CornerRadius = UDim.new(0,8)
 
--- Minimize
-local fpsMin = Instance.new("TextButton")
-fpsMin.Size = UDim2.fromOffset(36, 24)
-fpsMin.Position = UDim2.new(1, -84, 0.5, -12)
-fpsMin.Text = "—"
-fpsMin.Font = Enum.Font.GothamBold
-fpsMin.TextSize = 20
-fpsMin.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
-fpsMin.TextColor3 = Color3.fromRGB(200, 205, 220)
-Instance.new("UICorner", fpsMin).CornerRadius = UDim.new(0, 8)
-fpsMin.Parent = fpsTitleBar
-
--- Close
-local fpsClose = Instance.new("TextButton")
-fpsClose.Size = UDim2.fromOffset(36, 24)
-fpsClose.Position = UDim2.new(1, -44, 0.5, -12)
-fpsClose.Text = "X"
-fpsClose.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
-fpsClose.TextColor3 = Color3.fromRGB(255, 220, 220)
-Instance.new("UICorner", fpsClose).CornerRadius = UDim.new(0, 8)
-fpsClose.Parent = fpsTitleBar
-
--- Minimized circle (FPS)
-local fpsCircle = Instance.new("TextButton")
-fpsCircle.Name = "FPSCircle"
-fpsCircle.Visible = false
-fpsCircle.Text = "FPS"
-fpsCircle.Font = Enum.Font.GothamBold
-fpsCircle.TextSize = 18
-fpsCircle.Size = UDim2.fromOffset(50, 50)
-fpsCircle.Position = UDim2.new(0.5, -25, 0.45, -25)
-fpsCircle.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
-fpsCircle.TextColor3 = Color3.fromRGB(220, 230, 255)
-Instance.new("UICorner", fpsCircle).CornerRadius = UDim.new(1, 0)
-Instance.new("UIStroke", fpsCircle).Color = Color3.fromRGB(80, 120, 255)
-fpsCircle.Parent = fpsGui
-makeDraggable(fpsCircle, fpsCircle)
-
-fpsMin.MouseButton1Click:Connect(function()
-	fpsMain.Visible = false
-	fpsCircle.Visible = true
-end)
-fpsCircle.MouseButton1Click:Connect(function()
-	fpsCircle.Visible = false
-	fpsMain.Visible = true
-end)
-
--- Konten FPS UI (rows)
-local fpsBody = Instance.new("ScrollingFrame")
-fpsBody.Size = UDim2.new(1, -20, 1, -50)
-fpsBody.Position = UDim2.new(0, 10, 0, 44)
-fpsBody.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-fpsBody.ScrollBarThickness = 6
-fpsBody.CanvasSize = UDim2.new(0, 0, 0, 0)
-Instance.new("UICorner", fpsBody).CornerRadius = UDim.new(0, 8)
-fpsBody.Parent = fpsMain
-
-local fpsLayout = Instance.new("UIListLayout", fpsBody)
-fpsLayout.Padding = UDim.new(0, 12)
-fpsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
--- Helper untuk membuat row dengan beberapa toggle
-local function makeToggleRow(parent, toggles)
-	local row = Instance.new("Frame")
-	row.Size = UDim2.new(1, 0, 0, 30)
-	row.BackgroundTransparency = 1
-	row.Parent = parent
-	local layout = Instance.new("UIListLayout", row)
-	layout.FillDirection = Enum.FillDirection.Horizontal
-	layout.Padding = UDim.new(0, 8)
+	local layout = Instance.new("UIListLayout", body)
+	layout.Padding = UDim.new(0,8)
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	local btns = {}
-	for _, data in ipairs(toggles) do
-		local btn, get = makeToggle(row, data.text, data.width or 90)
-		btns[data.text] = {btn=btn, get=get}
-	end
-	return btns
-end
 
--- Row 1: silent aim, target visualization, teamcheck, visible check
-makeToggleRow(fpsBody, {
-	{text="Silent Aim", width=90},
-	{text="Target Vis", width=90},
-	{text="Teamcheck", width=90},
-	{text="Visible", width=90}
-})
+	-- Row 1 FPS
+	local row1 = Instance.new("Frame")
+	row1.Size = UDim2.new(1,0,0,30)
+	row1.BackgroundTransparency = 1
+	row1.Parent = body
+	local row1Layout = Instance.new("UIListLayout", row1)
+	row1Layout.FillDirection = Enum.FillDirection.Horizontal
+	row1Layout.Padding = UDim.new(0,5)
+	row1Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Row 2: hitchance / targetpart, Infinite Zoom, esp, esp boxes
-makeToggleRow(fpsBody, {
-	{text="Hitchance", width=90},
-	{text="Inf Zoom", width=90},
-	{text="ESP", width=90},
-	{text="ESP Boxes", width=90}
-})
+	local visTargetBtn, _ = createToggleButton(row1, "Vis Target", 100)
+	local visibleCheckBtn, _ = createToggleButton(row1, "Visible Check", 100)
+	local hitchanceBtn, _ = createToggleButton(row1, "Hitchance", 100)
+	-- Infinite Zoom di sini sinkron dengan main menu? nanti diatur
 
--- Row 3: Health, show displayname, show equipped item, show distance
-makeToggleRow(fpsBody, {
-	{text="Health", width=90},
-	{text="DispName", width=90},
-	{text="Equipped", width=90},
-	{text="Distance", width=90}
-})
+	-- Row 2 FPS
+	local row2 = Instance.new("Frame")
+	row2.Size = UDim2.new(1,0,0,30)
+	row2.BackgroundTransparency = 1
+	row2.Parent = body
+	local row2Layout = Instance.new("UIListLayout", row2)
+	row2Layout.FillDirection = Enum.FillDirection.Horizontal
+	row2Layout.Padding = UDim.new(0,5)
+	row2Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Row 4: show tracers, teamcheck, use team color, chams
-makeToggleRow(fpsBody, {
-	{text="Tracers", width=90},
-	{text="Teamcheck2", width=90},
-	{text="Team Color", width=90},
-	{text="Chams", width=90}
-})
+	local espBtn, _ = createToggleButton(row2, "ESP", 80)
+	local espBoxesBtn, _ = createToggleButton(row2, "ESP Boxes", 90)
+	local healthBtn, _ = createToggleButton(row2, "Health", 80)
+	local dispNameBtn, _ = createToggleButton(row2, "DispName", 90)
 
--- Hubungkan Infinite Zoom di FPS UI dengan main menu
--- Kita akan cari toggle "Inf Zoom" di row2. Karena kita tidak menyimpan referensi, kita bisa mencari berdasarkan teks.
--- Alternatif: kita buat referensi global untuk toggle infinite zoom di FPS UI.
-local infZoomFPS
-for _, child in ipairs(fpsBody:GetChildren()) do
-	if child:IsA("Frame") then
-		for _, btn in ipairs(child:GetChildren()) do
-			if btn:IsA("TextButton") and btn.Text:find("Inf Zoom") then
-				infZoomFPS = btn
-				break
-			end
-		end
-	end
-end
-if infZoomFPS then
-	-- Saat infinite zoom di main menu berubah, update FPS UI
-	-- Kita override fungsi klik di main menu
-	local oldClick = infZoomBtn.MouseButton1Click
-	infZoomBtn.MouseButton1Click:Connect(function()
-		infiniteZoomEnabled = not infiniteZoomEnabled
-		infZoomBtn.Text = "Inf Zoom" .. (infiniteZoomEnabled and ": ON" or ": OFF")
-		infZoomBtn.BackgroundColor3 = infiniteZoomEnabled and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
-		-- Update FPS UI
-		if infZoomFPS then
-			local enabled = infiniteZoomEnabled
-			infZoomFPS.Text = "Inf Zoom" .. (enabled and ": ON" or ": OFF")
-			infZoomFPS.BackgroundColor3 = enabled and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
-		end
+	-- Row 3 FPS
+	local row3 = Instance.new("Frame")
+	row3.Size = UDim2.new(1,0,0,30)
+	row3.BackgroundTransparency = 1
+	row3.Parent = body
+	local row3Layout = Instance.new("UIListLayout", row3)
+	row3Layout.FillDirection = Enum.FillDirection.Horizontal
+	row3Layout.Padding = UDim.new(0,5)
+	row3Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+	local equipBtn, _ = createToggleButton(row3, "Equip", 70)
+	local distanceBtn, _ = createToggleButton(row3, "Distance", 80)
+	local tracersBtn, _ = createToggleButton(row3, "Tracers", 80)
+	local teamColorBtn, _ = createToggleButton(row3, "Team Color", 90)
+
+	-- Minimize icon
+	local fpsMinimizedIcon = Instance.new("TextButton")
+	fpsMinimizedIcon.Name = "FPSMinimized"
+	fpsMinimizedIcon.Size = UDim2.fromOffset(40, 40)
+	fpsMinimizedIcon.Position = UDim2.new(0.5, -20, 0.5, -20)
+	fpsMinimizedIcon.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+	fpsMinimizedIcon.Text = "FPS"
+	fpsMinimizedIcon.TextColor3 = Color3.fromRGB(220, 230, 255)
+	fpsMinimizedIcon.Font = Enum.Font.GothamBold
+	fpsMinimizedIcon.TextSize = 20
+	fpsMinimizedIcon.Visible = false
+	Instance.new("UICorner", fpsMinimizedIcon).CornerRadius = UDim.new(1, 0)
+	Instance.new("UIStroke", fpsMinimizedIcon).Color = Color3.fromRGB(80, 120, 255)
+	fpsMinimizedIcon.Parent = fpsGui
+	makeDraggable(fpsMinimizedIcon, fpsMinimizedIcon)
+
+	tmin.MouseButton1Click:Connect(function()
+		main.Visible = false
+		fpsMinimizedIcon.Visible = true
 	end)
-	-- Saat infinite zoom di FPS UI diklik, update main menu
-	infZoomFPS.MouseButton1Click:Connect(function()
-		infiniteZoomEnabled = not infiniteZoomEnabled
-		infZoomFPS.Text = "Inf Zoom" .. (infiniteZoomEnabled and ": ON" or ": OFF")
-		infZoomFPS.BackgroundColor3 = infiniteZoomEnabled and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
-		-- Update main menu
-		infZoomBtn.Text = "Inf Zoom" .. (infiniteZoomEnabled and ": ON" or ": OFF")
-		infZoomBtn.BackgroundColor3 = infiniteZoomEnabled and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
+
+	fpsMinimizedIcon.MouseButton1Click:Connect(function()
+		fpsMinimizedIcon.Visible = false
+		main.Visible = true
 	end)
+
+	tclose.MouseButton1Click:Connect(function()
+		fpsMinimizedIcon.Visible = false
+		main.Visible = false
+		-- Update toggle di main menu
+		fpsUIBtn.Text = "FPS UI: OFF"
+		fpsUIBtn.BackgroundColor3 = Color3.fromRGB(40,40,48)
+	end)
+
+	return fpsGui, main, fpsMinimizedIcon
 end
+
+local fpsGui, fpsMain, fpsMinimizedIcon = createFPSUI()
 
 -- Fungsi untuk mengatur visibilitas FPS UI
 local function setFPSUIVisible(flag)
 	fpsMain.Visible = flag
+	fpsMinimizedIcon.Visible = false
 	fpsUIBtn.Text = "FPS UI" .. (flag and ": ON" or ": OFF")
 	fpsUIBtn.BackgroundColor3 = flag and Color3.fromRGB(35, 70, 45) or Color3.fromRGB(40, 40, 48)
 end
 
-fpsClose.MouseButton1Click:Connect(function()
-	setFPSUIVisible(false)
-end)
-
 fpsUIBtn.MouseButton1Click:Connect(function()
-	local newState = not fpsMain.Visible
+	local newState = not fpsMain.Visible and not fpsMinimizedIcon.Visible
 	setFPSUIVisible(newState)
+	if newState then
+		fpsMain.Visible = true
+	end
 end)
 
--- Update canvas size fpsBody
-fpsBody.CanvasSize = UDim2.new(0,0,0, fpsLayout.AbsoluteContentSize.Y)
+-- ========== SCRIPT LIBRARY UI (placeholder) ==========
+local function createScriptLibUI()
+	local libGui = Instance.new("ScreenGui")
+	libGui.Name = scriptLibGUIName
+	libGui.ResetOnSpawn = false
+	libGui.Parent = CoreGui
+
+	local main = Instance.new("Frame")
+	main.Size = UDim2.fromOffset(300, 200)
+	main.Position = UDim2.new(0.5, -150, 0.4, -100)
+	main.BackgroundColor3 = Color3.fromRGB(20,20,24)
+	main.Visible = false
+	main.Parent = libGui
+	makeDraggable(main, main)
+	Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
+	Instance.new("UIStroke", main).Color = Color3.fromRGB(80,120,255)
+
+	local tbar = Instance.new("Frame")
+	tbar.Size = UDim2.new(1,0,0,36)
+	tbar.BackgroundColor3 = Color3.fromRGB(28,28,34)
+	tbar.Parent = main
+	Instance.new("UICorner", tbar).CornerRadius = UDim.new(0,12)
+
+	local ttitle = Instance.new("TextLabel")
+	ttitle.BackgroundTransparency = 1
+	ttitle.Size = UDim2.new(1,-90,1,0)
+	ttitle.Position = UDim2.new(0,12,0,0)
+	ttitle.Text = "Script Library"
+	ttitle.Font = Enum.Font.GothamBold
+	ttitle.TextSize = 16
+	ttitle.TextColor3 = Color3.fromRGB(230,235,255)
+	ttitle.TextXAlignment = Enum.TextXAlignment.Left
+	ttitle.Parent = tbar
+
+	local tclose = Instance.new("TextButton")
+	tclose.Size = UDim2.fromOffset(36,24)
+	tclose.Position = UDim2.new(1,-44,0.5,-12)
+	tclose.Text = "X"
+	tclose.BackgroundColor3 = Color3.fromRGB(60,30,30)
+	tclose.TextColor3 = Color3.fromRGB(255,220,220)
+	Instance.new("UICorner", tclose).CornerRadius = UDim.new(0,8)
+	tclose.Parent = tbar
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1,-20,1,-50)
+	label.Position = UDim2.new(0,10,0,44)
+	label.BackgroundTransparency = 1
+	label.Text = "Script Library (coming soon)"
+	label.TextColor3 = Color3.new(1,1,1)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.Parent = main
+
+	tclose.MouseButton1Click:Connect(function()
+		main.Visible = false
+		scriptLibBtn.Text = "Script Lib: OFF"
+		scriptLibBtn.BackgroundColor3 = Color3.fromRGB(40,40,48)
+	end)
+
+	return libGui, main
+end
+
+local libGui, libMain = createScriptLibUI()
+
+scriptLibBtn.MouseButton1Click:Connect(function()
+	local newState = not libMain.Visible
+	libMain.Visible = newState
+	scriptLibBtn.Text = "Script Lib" .. (newState and ": ON" or ": OFF")
+	scriptLibBtn.BackgroundColor3 = newState and Color3.fromRGB(35,70,45) or Color3.fromRGB(40,40,48)
+end)
+
+-- ========== SETTINGS UI (gear) ==========
+local function createSettingsUI()
+	local setGui = Instance.new("ScreenGui")
+	setGui.Name = settingsGUIName
+	setGui.ResetOnSpawn = false
+	setGui.Parent = CoreGui
+
+	local main = Instance.new("Frame")
+	main.Size = UDim2.fromOffset(300, 200)
+	main.Position = UDim2.new(0.5, -150, 0.4, -100)
+	main.BackgroundColor3 = Color3.fromRGB(20,20,24)
+	main.Visible = false
+	main.Parent = setGui
+	makeDraggable(main, main)
+	Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
+	Instance.new("UIStroke", main).Color = Color3.fromRGB(80,120,255)
+
+	local tbar = Instance.new("Frame")
+	tbar.Size = UDim2.new(1,0,0,36)
+	tbar.BackgroundColor3 = Color3.fromRGB(28,28,34)
+	tbar.Parent = main
+	Instance.new("UICorner", tbar).CornerRadius = UDim.new(0,12)
+
+	local ttitle = Instance.new("TextLabel")
+	ttitle.BackgroundTransparency = 1
+	ttitle.Size = UDim2.new(1,-90,1,0)
+	ttitle.Position = UDim2.new(0,12,0,0)
+	ttitle.Text = "Settings"
+	ttitle.Font = Enum.Font.GothamBold
+	ttitle.TextSize = 16
+	ttitle.TextColor3 = Color3.fromRGB(230,235,255)
+	ttitle.TextXAlignment = Enum.TextXAlignment.Left
+	ttitle.Parent = tbar
+
+	local tclose = Instance.new("TextButton")
+	tclose.Size = UDim2.fromOffset(36,24)
+	tclose.Position = UDim2.new(1,-44,0.5,-12)
+	tclose.Text = "X"
+	tclose.BackgroundColor3 = Color3.fromRGB(60,30,30)
+	tclose.TextColor3 = Color3.fromRGB(255,220,220)
+	Instance.new("UICorner", tclose).CornerRadius = UDim.new(0,8)
+	tclose.Parent = tbar
+
+	local body = Instance.new("Frame")
+	body.Size = UDim2.new(1,-20,1,-50)
+	body.Position = UDim2.new(0,10,0,44)
+	body.BackgroundTransparency = 1
+	body.Parent = main
+
+	local layout = Instance.new("UIListLayout", body)
+	layout.Padding = UDim.new(0,8)
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+	-- Anti-AFK toggle
+	local afkBtn, getAfk = createToggleButton(body, "Anti-AFK", 150)
+
+	-- Server Hop & Rejoin button
+	local hopBtn = Instance.new("TextButton")
+	hopBtn.Size = UDim2.new(1, -10, 0, 40)
+	hopBtn.BackgroundColor3 = Color3.fromRGB(40,40,48)
+	hopBtn.Text = "Server Hop & Rejoin"
+	hopBtn.TextColor3 = Color3.fromRGB(255,255,255)
+	hopBtn.Font = Enum.Font.GothamBold
+	hopBtn.TextSize = 14
+	Instance.new("UICorner", hopBtn).CornerRadius = UDim.new(0,8)
+	hopBtn.Parent = body
+	hopBtn.MouseButton1Click:Connect(function()
+		-- Rejoin ke server yang sama
+		local ts = game:GetService("TeleportService")
+		local placeId = game.PlaceId
+		local jobId = game.JobId
+		ts:Teleport(placeId, player, nil, jobId)
+	end)
+
+	-- Character Respawn
+	local respawnBtn = Instance.new("TextButton")
+	respawnBtn.Size = UDim2.new(1, -10, 0, 40)
+	respawnBtn.BackgroundColor3 = Color3.fromRGB(40,40,48)
+	respawnBtn.Text = "Character Respawn"
+	respawnBtn.TextColor3 = Color3.fromRGB(255,255,255)
+	respawnBtn.Font = Enum.Font.GothamBold
+	respawnBtn.TextSize = 14
+	Instance.new("UICorner", respawnBtn).CornerRadius = UDim.new(0,8)
+	respawnBtn.Parent = body
+	respawnBtn.MouseButton1Click:Connect(function()
+		local char = player.Character
+		if char then
+			char:BreakJoints()
+		end
+	end)
+
+	-- Anti-AFK loop
+	task.spawn(function()
+		local vu = game:GetService("VirtualUser")
+		player.Idled:Connect(function()
+			if getAfk() then
+				vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+				task.wait(1)
+				vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+			end
+		end)
+	end)
+
+	return setGui, main
+end
+
+local setGui, setMain = createSettingsUI()
+
+-- Hubungkan semua gear button
+gearBtn.MouseButton1Click:Connect(function()
+	setMain.Visible = not setMain.Visible
+end)
+-- Untuk TP UI gear
+local tgear = tpGui:FindFirstChild("Frame"):FindFirstChild("TitleBar"):FindFirstChild("Settings", true)
+if tgear then
+	tgear.MouseButton1Click:Connect(function()
+		setMain.Visible = not setMain.Visible
+	end)
+end
+-- Untuk FPS UI gear
+local fgear = fpsGui:FindFirstChild("Frame"):FindFirstChild("TitleBar"):FindFirstChild("Settings", true)
+if fgear then
+	fgear.MouseButton1Click:Connect(function()
+		setMain.Visible = not setMain.Visible
+	end)
+end
 
 -- Close main menu
 closeBtn.MouseButton1Click:Connect(function()
@@ -1730,7 +1749,10 @@ closeBtn.MouseButton1Click:Connect(function()
 	flyGui:Destroy()
 	tpGui:Destroy()
 	fpsGui:Destroy()
-	settingsGui:Destroy()
+	libGui:Destroy()
+	setGui:Destroy()
+	freecamPart:Destroy()
+	freecamInfo:Destroy()
 end)
 
 -- Notifikasi
