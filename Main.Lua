@@ -1,5 +1,5 @@
 -- Script Profesional untuk Delta Executor
--- GUI: Escape Tsunami For Phones (Versi Stabil dengan Perbaikan Drag dan Instant Collect)
+-- GUI: Escape Tsunami For Phones (Versi Final dengan Drag dan Instant Collect yang diperbaiki)
 
 -- ==================================================
 -- 1. KONFIGURASI AWAL
@@ -8,8 +8,6 @@ local coreGui = game:GetService("CoreGui")
 local players = game:GetService("Players")
 local userInput = game:GetService("UserInputService")
 local tweenService = game:GetService("TweenService")
-local runService = game:GetService("RunService")
-local collectionService = game:GetService("CollectionService")
 local workspace = game:GetService("Workspace")
 
 local localPlayer = players.LocalPlayer
@@ -37,6 +35,7 @@ mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 mainFrame.ClipsDescendants = true
+mainFrame.Active = true
 
 -- Sudut melengkung
 local uiCorner = Instance.new("UICorner")
@@ -111,7 +110,7 @@ scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 -- ==================================================
 -- 5. MEMBUAT KONTEN DALAM SCROLLINGFRAME
 -- ==================================================
-local function createLabel(text, parent, yPos)
+local function createLabel(text, yPos)
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 0, 25)
     label.Position = UDim2.new(0, 0, 0, yPos)
@@ -121,11 +120,11 @@ local function createLabel(text, parent, yPos)
     label.TextScaled = true
     label.Font = Enum.Font.GothamBold
     label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = parent
+    label.Parent = scrollingFrame
     return label
 end
 
-local function createButton(text, parent, yPos, color)
+local function createButton(text, yPos, color)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 45)
     btn.Position = UDim2.new(0, 0, 0, yPos)
@@ -135,7 +134,7 @@ local function createButton(text, parent, yPos, color)
     btn.TextScaled = true
     btn.Font = Enum.Font.GothamBold
     btn.BorderSizePixel = 0
-    btn.Parent = parent
+    btn.Parent = scrollingFrame
     btn.AutoButtonColor = true
     
     local btnCorner = Instance.new("UICorner")
@@ -145,12 +144,12 @@ local function createButton(text, parent, yPos, color)
     return btn
 end
 
-local function createSwitch(text, parent, yPos)
+local function createSwitch(text, yPos)
     local container = Instance.new("Frame")
     container.Size = UDim2.new(1, 0, 0, 30)
     container.Position = UDim2.new(0, 0, 0, yPos)
     container.BackgroundTransparency = 1
-    container.Parent = parent
+    container.Parent = scrollingFrame
     
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0, 200, 1, 0)
@@ -179,15 +178,15 @@ local function createSwitch(text, parent, yPos)
     toggleCorner.CornerRadius = UDim.new(0, 12)
     toggleCorner.Parent = toggle
     
-    return toggle, container
+    return toggle
 end
 
--- Mulai menempatkan konten di scrollingFrame
+-- Mulai menempatkan konten
 local yOffset = 0
 local spacing = 5
 
--- 5a. Walkspeed Slider
-local wsLabel = createLabel("Walkspeed", scrollingFrame, yOffset)
+-- Walkspeed Slider
+createLabel("Walkspeed", yOffset)
 yOffset = yOffset + 25 + spacing
 
 -- Slider background
@@ -202,7 +201,6 @@ local sliderCorner = Instance.new("UICorner")
 sliderCorner.CornerRadius = UDim.new(0, 5)
 sliderCorner.Parent = sliderBg
 
--- Slider button
 local sliderButton = Instance.new("TextButton")
 sliderButton.Size = UDim2.new(0, 15, 0, 20)
 sliderButton.Position = UDim2.new(0, 0, 0.5, -10)
@@ -215,7 +213,6 @@ local sliderButtonCorner = Instance.new("UICorner")
 sliderButtonCorner.CornerRadius = UDim.new(0, 4)
 sliderButtonCorner.Parent = sliderButton
 
--- Nilai slider
 local wsValue = Instance.new("TextLabel")
 wsValue.Size = UDim2.new(0, 50, 0, 25)
 wsValue.Position = UDim2.new(0, 210, 0, yOffset)
@@ -228,24 +225,24 @@ wsValue.Parent = scrollingFrame
 
 yOffset = yOffset + 30 + spacing
 
--- 5b. Tombol VIP, Hapus Wave, Stop Loop
-local vipBtn = createButton("VIP", scrollingFrame, yOffset, Color3.fromRGB(128, 0, 128))
+-- Tombol VIP, Hapus Wave, Stop Loop
+local vipBtn = createButton("VIP", yOffset, Color3.fromRGB(128, 0, 128))
 yOffset = yOffset + 45 + spacing
 
-local waveBtn = createButton("Hapus Wave", scrollingFrame, yOffset)
+local waveBtn = createButton("Hapus Wave", yOffset)
 yOffset = yOffset + 45 + spacing
 
-local stopBtn = createButton("Stop Loop", scrollingFrame, yOffset)
+local stopBtn = createButton("Stop Loop", yOffset)
 yOffset = yOffset + 45 + spacing * 2
 
--- 5c. Switch (Instan Collect, Instant Proximity)
-local collectToggle, collectContainer = createSwitch("Instan Collect", scrollingFrame, yOffset)
+-- Switch
+local collectToggle = createSwitch("Instan Collect", yOffset)
 yOffset = yOffset + 30 + spacing
 
-local proxToggle, proxContainer = createSwitch("Instant Proximity", scrollingFrame, yOffset)
+local proxToggle = createSwitch("Instant Proximity", yOffset)
 yOffset = yOffset + 30 + spacing
 
--- Set CanvasSize scrollingFrame
+-- Set CanvasSize
 scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset)
 
 -- ==================================================
@@ -299,7 +296,6 @@ userInput.InputChanged:Connect(function(input)
     end
 end)
 
--- Update ketika karakter berganti
 localPlayer.CharacterAdded:Connect(function()
     task.wait(1)
     updateWalkspeed(currentSpeed)
@@ -372,18 +368,17 @@ stopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==================================================
--- 9. FUNGSIONALITAS SWITCH (Instan Collect & Instant Proximity)
+-- 9. FUNGSIONALITAS SWITCH
 -- ==================================================
 local collectEnabled = false
 local proxEnabled = false
 local collectConnection = nil
 local proxConnections = {}
 
--- Fungsi untuk toggle Instan Collect
+-- Instant Collect: ketika model masuk ke CarryPart, pindahkan ke CollectWall
 local function setCollectEnabled(state)
     collectEnabled = state
     if state then
-        -- Cari path sesuai deskripsi game
         local playerName = localPlayer.Name
         local carryPart = workspace:FindFirstChild(playerName) and workspace[playerName]:FindFirstChild("CarryPart")
         local collectWall = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Collect") and workspace.Map.Collect:FindFirstChild("CollectWall")
@@ -391,28 +386,19 @@ local function setCollectEnabled(state)
         if carryPart and collectWall then
             collectConnection = carryPart.ChildAdded:Connect(function(child)
                 if child:IsA("Model") then
-                    -- Pastikan model memiliki PrimaryPart atau bagian pertama
+                    print("[Instant Collect] Model detected in CarryPart: " .. child.Name)
                     local primary = child.PrimaryPart or child:FindFirstChildWhichIsA("BasePart")
                     if primary then
-                        -- Pindahkan seluruh model ke posisi CollectWall agar menyentuh
                         child:SetPrimaryPartCFrame(collectWall.CFrame)
-                        -- Alternatif: jika tidak ada PrimaryPart, pindahkan semua bagian
-                        if not child.PrimaryPart then
-                            for _, part in ipairs(child:GetChildren()) do
-                                if part:IsA("BasePart") then
-                                    part.CFrame = collectWall.CFrame
-                                end
-                            end
-                        end
-                        print("[Instant Collect] Model dipindahkan ke CollectWall")
+                        print("[Instant Collect] Model moved to CollectWall")
                     else
-                        warn("[Instant Collect] Model tidak memiliki part")
+                        warn("[Instant Collect] No BasePart found in model")
                     end
                 end
             end)
             print("[Instant Collect] Activated")
         else
-            warn("[Instant Collect] CarryPart atau CollectWall tidak ditemukan. Pastikan struktur: workspace.[NamaPlayer].CarryPart dan workspace.Map.Collect.CollectWall")
+            warn("[Instant Collect] CarryPart or CollectWall not found. Check paths.")
         end
     else
         if collectConnection then
@@ -423,17 +409,15 @@ local function setCollectEnabled(state)
     end
 end
 
--- Fungsi untuk toggle Instant Proximity
+-- Instant Proximity: set HoldDuration semua ProximityPrompt jadi 0
 local function setProxEnabled(state)
     proxEnabled = state
     if state then
-        -- Set semua ProximityPrompt yang sudah ada
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj:IsA("ProximityPrompt") then
                 obj.HoldDuration = 0
             end
         end
-        -- Pantau yang baru
         local conn = workspace.DescendantAdded:Connect(function(desc)
             if desc:IsA("ProximityPrompt") then
                 desc.HoldDuration = 0
@@ -450,7 +434,6 @@ local function setProxEnabled(state)
     end
 end
 
--- Event untuk switch
 collectToggle.MouseButton1Click:Connect(function()
     collectEnabled = not collectEnabled
     setCollectEnabled(collectEnabled)
@@ -476,39 +459,63 @@ proxToggle.MouseButton1Click:Connect(function()
 end)
 
 -- ==================================================
--- 10. DRAG HEADER (hanya di area judul, tidak di tombol)
+-- 10. DRAG HEADER (diperbaiki)
 -- ==================================================
 local dragging = false
-local dragStart, startPos
+local dragInput
+local dragStart
+local startPos
 
+-- Fungsi untuk memulai drag
+local function startDrag(input)
+    dragging = true
+    dragStart = input.Position
+    startPos = mainFrame.Position
+end
+
+-- Fungsi untuk mengupdate posisi
+local function updateDrag(input)
+    if not dragging then return end
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+-- Fungsi untuk mengakhiri drag
+local function stopDrag()
+    dragging = false
+end
+
+-- Deteksi input di header
 header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        -- Cek apakah target bukan tombol minimize/close
         local target = input.Target
-        -- Hanya mulai drag jika target bukan tombol (minimize/close) dan merupakan bagian dari header atau title
-        if target ~= minimizeBtn and target ~= closeBtn and (target == header or target == titleLabel) then
-            dragging = true
-            dragStart = input.Position
-            startPos = mainFrame.Position
+        if target ~= minimizeBtn and target ~= closeBtn then
+            startDrag(input)
         end
     end
 end)
 
 header.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
+        updateDrag(input)
     end
 end)
 
 header.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
+        stopDrag()
     end
+end)
+
+-- Juga tangani jika mouse meninggalkan header (opsional)
+header.MouseLeave:Connect(function()
+    stopDrag()
 end)
 
 -- ==================================================
@@ -520,15 +527,11 @@ local minimizedHeight = 45
 
 local function animateMinimize()
     if isMinimized then
-        -- Maximize
         scrollingFrame.Visible = true
-        local tween = tweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 300, 0, originalHeight)})
-        tween:Play()
+        tweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, originalHeight)}):Play()
     else
-        -- Minimize
         scrollingFrame.Visible = false
-        local tween = tweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 300, 0, minimizedHeight)})
-        tween:Play()
+        tweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, minimizedHeight)}):Play()
     end
     isMinimized = not isMinimized
 end
@@ -543,6 +546,17 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==================================================
--- 13. INISIALISASI SELESAI
+-- 13. DEBUG: Cetak path untuk Instant Collect
 -- ==================================================
-print("GUI Escape Tsunami For Phones berhasil dimuat. Drag hanya di area judul. Instant Collect aktif jika struktur game sesuai.")
+print("=== Path Check ===")
+local playerName = localPlayer.Name
+local carryPart = workspace:FindFirstChild(playerName) and workspace[playerName]:FindFirstChild("CarryPart")
+local collectWall = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Collect") and workspace.Map.Collect:FindFirstChild("CollectWall")
+print("CarryPart found:", carryPart ~= nil)
+print("CollectWall found:", collectWall ~= nil)
+print("==================")
+
+-- ==================================================
+-- SELESAI
+-- ==================================================
+print("GUI Escape Tsunami For Phones berhasil dimuat. Drag header berfungsi.")
