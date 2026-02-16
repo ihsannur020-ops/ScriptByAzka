@@ -1,5 +1,5 @@
 -- Script UI untuk Delta Executor
--- GUI: Survive LAVA for Brainrots (dengan fitur lengkap)
+-- GUI: Survive LAVA for Brainrots (dengan fitur lengkap + Rebirth Need)
 -- ==================================================
 -- 1. KONFIGURASI AWAL
 -- ==================================================
@@ -9,6 +9,7 @@ local userInput = game:GetService("UserInputService")
 local tweenService = game:GetService("TweenService")
 local workspace = game:GetService("Workspace")
 local runService = game:GetService("RunService")
+local virtualInput = game:GetService("VirtualInputManager")
 
 local localPlayer = players.LocalPlayer
 local guiName = "SurviveLAVAforBrainrots_ScriptByAzka.UI_Utama"
@@ -23,6 +24,22 @@ local proxEnabled = false
 local proxConnections = {}
 local currentWalkSpeed = 30  -- default
 
+-- Tabel mapping rebirth ke nama model Brainrot
+local rebirthToModel = {
+    [1] = "BonecaAmbalabu",
+    [2] = "CactoHipopotamo",
+    [3] = "BallerinaCappuccina",
+    [4] = "CocofantoElefanto",
+    [5] = "Garama",
+    [6] = "UdinDinDinDun",
+    [7] = "LaVaccaSaturnoSatunita",
+    [8] = "LasVaquitasSaturnitas",
+    [9] = "GorilloWatermelondrillo",
+    [10] = "CompactaroniDiskaloni",
+    [11] = "ChillinChilli",
+    [12] = "CrazylonePizaione"
+}
+
 -- ==================================================
 -- 2. MEMBUAT ELEMEN DASAR GUI
 -- ==================================================
@@ -32,10 +49,10 @@ screenGui.Parent = coreGui
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Frame utama dengan ukuran tetap
+-- Frame utama dengan ukuran tetap (tinggi 400, maksimal)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 380)  -- sedikit lebih tinggi untuk 2 tombol + 1 switch
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -190)
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -61,7 +78,7 @@ local headerCorner = Instance.new("UICorner")
 headerCorner.CornerRadius = UDim.new(0, 6)
 headerCorner.Parent = header
 
--- Judul (diubah)
+-- Judul
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -70, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
@@ -186,23 +203,21 @@ local function createSwitch(text, yPos)
 end
 
 -- ==================================================
--- 6. MEMBUAT KONTEN SESUAI PERMINTAAN
+-- 6. MEMBUAT KONTEN
 -- ==================================================
 local yOffset = 0
 local spacing = 5
 
--- [Container Slide] Walkspeed
+-- Walkspeed Slider
 createLabel("Walkspeed", yOffset)
 yOffset = yOffset + 25 + spacing
 
--- Container untuk slider dan angka
 local sliderRow = Instance.new("Frame")
 sliderRow.Size = UDim2.new(1, 0, 0, 30)
 sliderRow.Position = UDim2.new(0, 0, 0, yOffset)
 sliderRow.BackgroundTransparency = 1
 sliderRow.Parent = scrollingFrame
 
--- Slider background
 local sliderBg = Instance.new("Frame")
 sliderBg.Size = UDim2.new(0, 200, 0, 10)
 sliderBg.Position = UDim2.new(0, 0, 0.5, -5)
@@ -214,10 +229,9 @@ local sliderCorner = Instance.new("UICorner")
 sliderCorner.CornerRadius = UDim.new(0, 5)
 sliderCorner.Parent = sliderBg
 
--- Tombol slider (yang bisa digeser)
 local sliderButton = Instance.new("TextButton")
 sliderButton.Size = UDim2.new(0, 15, 0, 20)
-sliderButton.Position = UDim2.new(0, 0, 0.5, -10)  -- Awal di 0
+sliderButton.Position = UDim2.new(0, 0, 0.5, -10)
 sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 sliderButton.Text = ""
 sliderButton.BorderSizePixel = 0
@@ -228,7 +242,6 @@ local sliderButtonCorner = Instance.new("UICorner")
 sliderButtonCorner.CornerRadius = UDim.new(0, 4)
 sliderButtonCorner.Parent = sliderButton
 
--- Label nilai walkspeed
 local wsValueLabel = Instance.new("TextLabel")
 wsValueLabel.Size = UDim2.new(0, 50, 1, 0)
 wsValueLabel.Position = UDim2.new(0, 210, 0, 0)
@@ -241,14 +254,18 @@ wsValueLabel.Parent = sliderRow
 
 yOffset = yOffset + 30 + spacing
 
--- [Container Tombol] VIP dan Nonaktif Lava
-local vipBtn = createButton("VIP", yOffset, Color3.fromRGB(255, 255, 0))  -- Kuning
+-- Container Tombol
+local vipBtn = createButton("VIP", yOffset, Color3.fromRGB(255, 255, 0))
 yOffset = yOffset + 45 + spacing
 
-local nonaktifLavaBtn = createButton("Nonaktif Lava", yOffset, Color3.fromRGB(255, 140, 0))  -- Oranye
+local nonaktifLavaBtn = createButton("Nonaktif Lava", yOffset, Color3.fromRGB(255, 140, 0))
+yOffset = yOffset + 45 + spacing
+
+-- Tombol Rebirth Need (warna biru)
+local rebirthBtn = createButton("Rebirth Need", yOffset, Color3.fromRGB(0, 150, 255))
 yOffset = yOffset + 45 + spacing * 2
 
--- [Container Switch] Instant Proximity
+-- Container Switch
 local proxToggle = createSwitch("Instant Proximity", yOffset)
 yOffset = yOffset + 30 + spacing
 
@@ -263,7 +280,6 @@ local maxSpeed = 300
 local sliderWidth = 200
 local draggingSlider = false
 
--- Fungsi mengatur walkspeed karakter
 local function setWalkSpeed(value)
     currentWalkSpeed = value
     wsValueLabel.Text = tostring(math.floor(value))
@@ -273,25 +289,21 @@ local function setWalkSpeed(value)
     end
 end
 
--- Update posisi slider berdasarkan nilai
 local function updateSliderPosition(value)
     local percent = (value - minSpeed) / (maxSpeed - minSpeed)
     local xPos = percent * (sliderWidth - sliderButton.AbsoluteSize.X)
     sliderButton.Position = UDim2.new(0, xPos, 0.5, -10)
 end
 
--- Hitung nilai dari posisi mouse
 local function getValueFromMouse(input)
     local absPos = sliderBg.AbsolutePosition
     local x = input.Position.X - absPos.X
-    -- Batasi
     x = math.clamp(x, 0, sliderWidth - sliderButton.AbsoluteSize.X)
     local percent = x / (sliderWidth - sliderButton.AbsoluteSize.X)
     local value = minSpeed + (maxSpeed - minSpeed) * percent
     return math.floor(value)
 end
 
--- Event drag slider
 sliderButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         draggingSlider = true
@@ -312,11 +324,9 @@ userInput.InputEnded:Connect(function(input)
     end
 end)
 
--- Set default
 setWalkSpeed(30)
 updateSliderPosition(30)
 
--- Update saat karakter respawn
 local function onCharacterAdded(char)
     repeat wait() until char:FindFirstChild("Humanoid")
     setWalkSpeed(currentWalkSpeed)
@@ -327,7 +337,7 @@ if localPlayer.Character then
 end
 
 -- ==================================================
--- 8. FUNGSI TOMOL VIP (Hapus VIPDoors)
+-- 8. FUNGSI TOMBOL VIP
 -- ==================================================
 vipBtn.MouseButton1Click:Connect(function()
     local vipFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("VIPDoors")
@@ -340,7 +350,7 @@ vipBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==================================================
--- 9. FUNGSI TOMOL NONAKTIF LAVA (Hapus Lavas)
+-- 9. FUNGSI TOMBOL NONAKTIF LAVA
 -- ==================================================
 nonaktifLavaBtn.MouseButton1Click:Connect(function()
     local lavaFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Lavas")
@@ -353,18 +363,127 @@ nonaktifLavaBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==================================================
--- 10. FUNGSI SWITCH INSTANT PROXIMITY
+-- 10. FUNGSI TOMBOL REBIRTH NEED
+-- ==================================================
+rebirthBtn.MouseButton1Click:Connect(function()
+    -- Simpan posisi awal
+    local char = localPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then
+        print("Karakter tidak ditemukan")
+        return
+    end
+    local savedPos = char.HumanoidRootPart.CFrame
+
+    -- Dapatkan nilai Rebirths
+    local leaderstats = localPlayer:FindFirstChild("leaderstats")
+    if not leaderstats then
+        print("leaderstats tidak ditemukan")
+        return
+    end
+    local rebirthValue = leaderstats:FindFirstChild("Rebirths")
+    if not rebirthValue then
+        print("Nilai Rebirths tidak ditemukan")
+        return
+    end
+    local rebirthNum = rebirthValue.Value
+    if rebirthNum < 1 or rebirthNum > 12 then
+        print("Rebirths di luar rentang 1-12")
+        return
+    end
+
+    -- Nama model Brainrot yang dicari
+    local targetModelName = rebirthToModel[rebirthNum]
+    if not targetModelName then
+        print("Tidak ada mapping untuk rebirth " .. rebirthNum)
+        return
+    end
+
+    -- Cari model Brainrot di dalam folder GameFolder.Brainrots
+    local brainrotsFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Brainrots")
+    if not brainrotsFolder then
+        print("Folder Brainrots tidak ditemukan")
+        return
+    end
+
+    local targetModel = nil
+    -- Cari di semua subfolder (Common, Rare, dll)
+    for _, rarityFolder in ipairs(brainrotsFolder:GetChildren()) do
+        if rarityFolder:IsA("Folder") then
+            local model = rarityFolder:FindFirstChild(targetModelName)
+            if model and model:IsA("Model") then
+                targetModel = model
+                break
+            end
+        end
+    end
+
+    if not targetModel then
+        print("Model Brainrot " .. targetModelName .. " tidak ditemukan")
+        return
+    end
+
+    -- Teleport ke posisi model Brainrot
+    local primaryPart = targetModel.PrimaryPart or targetModel:FindFirstChildWhichIsA("BasePart")
+    if not primaryPart then
+        print("Model Brainrot tidak memiliki part")
+        return
+    end
+    char.HumanoidRootPart.CFrame = primaryPart.CFrame * CFrame.new(0, 2, 0)  -- sedikit di depan
+
+    -- Tunggu sebentar agar posisi stabil
+    wait(0.5)
+
+    -- Simulasi tekan tombol E untuk mengambil
+    virtualInput:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    wait(0.1)
+    virtualInput:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+
+    -- Tunggu proses take (mungkin perlu waktu)
+    wait(1)
+
+    -- Dapatkan atribut Plot
+    local plotNum = localPlayer:GetAttribute("Plot")
+    if not plotNum then
+        print("Atribut Plot tidak ditemukan, menggunakan default 1")
+        plotNum = 1
+    else
+        plotNum = tonumber(plotNum)
+    end
+
+    -- Cari folder Plots
+    local plotsFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Plots")
+    if not plotsFolder then
+        print("Folder Plots tidak ditemukan")
+        -- tetap kembali ke posisi awal
+    else
+        local plotModel = plotsFolder:FindFirstChild(tostring(plotNum))
+        if plotModel and plotModel:IsA("Model") then
+            local plotPart = plotModel.PrimaryPart or plotModel:FindFirstChildWhichIsA("BasePart")
+            if plotPart then
+                char.HumanoidRootPart.CFrame = plotPart.CFrame * CFrame.new(0, 2, 0)
+                wait(0.5)
+            end
+        else
+            print("Plot " .. plotNum .. " tidak ditemukan")
+        end
+    end
+
+    -- Kembali ke posisi awal
+    char.HumanoidRootPart.CFrame = savedPos
+    print("Rebirth Need selesai")
+end)
+
+-- ==================================================
+-- 11. FUNGSI SWITCH INSTANT PROXIMITY
 -- ==================================================
 local function setProxEnabled(state)
     proxEnabled = state
     if state then
-        -- Terapkan ke semua ProximityPrompt yang sudah ada
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj:IsA("ProximityPrompt") then
                 obj.HoldDuration = 0
             end
         end
-        -- Pantau descendant baru
         local conn = workspace.DescendantAdded:Connect(function(desc)
             if desc:IsA("ProximityPrompt") then
                 desc.HoldDuration = 0
@@ -375,7 +494,6 @@ local function setProxEnabled(state)
         proxToggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
         print("[Instant Proximity] Activated")
     else
-        -- Putuskan semua koneksi
         for _, conn in ipairs(proxConnections) do
             conn:Disconnect()
         end
@@ -390,11 +508,10 @@ proxToggle.MouseButton1Click:Connect(function()
     setProxEnabled(not proxEnabled)
 end)
 
--- Inisialisasi dalam keadaan OFF
 setProxEnabled(false)
 
 -- ==================================================
--- 11. FUNGSIONALITAS DRAG HEADER
+-- 12. DRAG HEADER
 -- ==================================================
 local dragging = false
 local dragStart
@@ -427,7 +544,7 @@ header.InputEnded:Connect(function(input)
 end)
 
 -- ==================================================
--- 12. MINIMIZE ANIMASI
+-- 13. MINIMIZE ANIMASI
 -- ==================================================
 local isMinimized = false
 local originalHeight = mainFrame.Size.Y.Offset
@@ -447,11 +564,10 @@ end
 minimizeBtn.MouseButton1Click:Connect(animateMinimize)
 
 -- ==================================================
--- 13. CLOSE
+-- 14. CLOSE
 -- ==================================================
 closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
-    -- Matikan koneksi proximity jika aktif
     if proxEnabled then
         setProxEnabled(false)
     end
@@ -460,4 +576,4 @@ end)
 -- ==================================================
 -- SELESAI
 -- ==================================================
-print("GUI Survive LAVA for Brainrots (dengan fitur lengkap) berhasil dimuat.")
+print("GUI Survive LAVA for Brainrots (dengan fitur Rebirth Need) berhasil dimuat.")
