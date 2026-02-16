@@ -1,52 +1,53 @@
--- Script Profesional untuk Delta Executor
--- GUI: Escape Tsunami For Phones (Versi Final dengan Drag Fix dan Tombol Responsif)
+-- Script untuk Delta Executor
+-- Membuat GUI dengan nama "ScriptByAzka_Deepseek" di CoreGui
+-- Dilengkapi tombol minimize (animasi gulung ke atas) dan close
 
--- ==================================================
--- 1. KONFIGURASI AWAL
--- ==================================================
+-- ===========================================
+-- CEK DAN HAPUS GUI LAMA JIKA ADA
+-- ===========================================
 local coreGui = game:GetService("CoreGui")
-local players = game:GetService("Players")
-local userInput = game:GetService("UserInputService")
-local tweenService = game:GetService("TweenService")
-local workspace = game:GetService("Workspace")
+local guiName = "ScriptByAzka_Deepseek"  -- Nama GUI sesuai instruksi
 
-local localPlayer = players.LocalPlayer
-local guiName = "EscapeTsunamiGUI"
-
--- Hapus GUI lama jika ada
-if coreGui:FindFirstChild(guiName) then
-    coreGui:FindFirstChild(guiName):Destroy()
+-- Cari GUI lama dengan nama yang sama
+local existingGui = coreGui:FindFirstChild(guiName)
+if existingGui then
+    existingGui:Destroy()  -- Hapus jika sudah ada
 end
 
--- ==================================================
--- 2. MEMBUAT ELEMEN DASAR GUI
--- ==================================================
+-- ===========================================
+-- MEMBUAT GUI BARU
+-- ===========================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = guiName
 screenGui.Parent = coreGui
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.ResetOnSpawn = false  -- Agar tidak hilang saat respawn
 
--- Frame utama dengan ukuran tetap (lebar 300, tinggi 350)
+-- Frame utama (panel)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 350)
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+mainFrame.Size = UDim2.new(0, 320, 0, 400)  -- Lebar sedikit lebih besar untuk menampung tombol
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -200)  -- Tengah layar
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)  -- #141414
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
-mainFrame.ClipsDescendants = true
-mainFrame.Active = true
 
 -- Sudut melengkung
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 8)
-uiCorner.Parent = mainFrame
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
 
--- ==================================================
--- 3. HEADER
--- ==================================================
+-- Garis aksen hijau neon di kiri
+local accentBar = Instance.new("Frame")
+accentBar.Size = UDim2.new(0, 4, 1, 0)
+accentBar.Position = UDim2.new(0, 0, 0, 0)
+accentBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)  -- Hijau neon
+accentBar.BorderSizePixel = 0
+accentBar.Parent = mainFrame
+
+-- ===========================================
+-- HEADER (dengan ikon, judul, dan tombol minimize/close)
+-- ===========================================
 local header = Instance.new("Frame")
-header.Size = UDim2.new(1, -10, 0, 30)
+header.Size = UDim2.new(1, -10, 0, 40)
 header.Position = UDim2.new(0, 5, 0, 5)
 header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 header.BorderSizePixel = 0
@@ -56,547 +57,190 @@ local headerCorner = Instance.new("UICorner")
 headerCorner.CornerRadius = UDim.new(0, 6)
 headerCorner.Parent = header
 
+-- Ikon petir
+local icon = Instance.new("TextLabel")
+icon.Size = UDim2.new(0, 30, 0, 30)
+icon.Position = UDim2.new(0, 5, 0.5, -15)
+icon.BackgroundTransparency = 1
+icon.Text = "⚡"
+icon.TextColor3 = Color3.fromRGB(0, 255, 0)
+icon.TextScaled = true
+icon.Font = Enum.Font.GothamBold
+icon.Parent = header
+
 -- Judul
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -70, 1, 0)
-titleLabel.Position = UDim2.new(0, 10, 0, 0)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Escape Tsunami For Phones"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextScaled = true
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-titleLabel.Parent = header
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -100, 1, 0)  -- Beri ruang untuk tombol di kanan
+title.Position = UDim2.new(0, 40, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "WAVE LOOP CONTROL"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = header
 
 -- Tombol Minimize
 local minimizeBtn = Instance.new("TextButton")
-minimizeBtn.Size = UDim2.new(0, 25, 0, 25)
-minimizeBtn.Position = UDim2.new(1, -60, 0.5, -12.5)
-minimizeBtn.BackgroundTransparency = 1
-minimizeBtn.Text = "—"
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -65, 0.5, -15)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+minimizeBtn.Text = "—"  -- Simbol minus
 minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 minimizeBtn.TextScaled = true
 minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = header
 
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 4)
+minCorner.Parent = minimizeBtn
+
 -- Tombol Close
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 25, 0, 25)
-closeBtn.Position = UDim2.new(1, -30, 0.5, -12.5)
-closeBtn.BackgroundTransparency = 1
-closeBtn.Text = "X"
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -30, 0.5, -15)
+closeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+closeBtn.Text = "✕"  -- Simbol X
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.TextScaled = true
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.BorderSizePixel = 0
 closeBtn.Parent = header
 
--- ==================================================
--- 4. SCROLLING FRAME UNTUK KONTEN
--- ==================================================
-local scrollingFrame = Instance.new("ScrollingFrame")
-scrollingFrame.Size = UDim2.new(1, -20, 1, -55)
-scrollingFrame.Position = UDim2.new(0, 10, 0, 45)
-scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.BorderSizePixel = 0
-scrollingFrame.ScrollBarThickness = 4
-scrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-scrollingFrame.Parent = mainFrame
-scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 4)
+closeCorner.Parent = closeBtn
 
--- ==================================================
--- 5. MEMBUAT KONTEN DALAM SCROLLINGFRAME
--- ==================================================
-local function createLabel(text, yPos)
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 25)
-    label.Position = UDim2.new(0, 0, 0, yPos)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextScaled = true
-    label.Font = Enum.Font.GothamBold
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = scrollingFrame
-    return label
-end
+-- ===========================================
+-- CONTAINER UNTUK TOMBOL UTAMA (akan di-minimize)
+-- ===========================================
+local buttonContainer = Instance.new("Frame")
+buttonContainer.Size = UDim2.new(1, -20, 0, 120)  -- Tinggi 120 untuk dua tombol
+buttonContainer.Position = UDim2.new(0, 10, 0, 55)  -- Di bawah header
+buttonContainer.BackgroundTransparency = 1
+buttonContainer.Parent = mainFrame
+buttonContainer.ClipsDescendants = true  -- Agar anak-anaknya terpotong saat dikecilkan
 
-local function createButton(text, yPos, color)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 45)
-    btn.Position = UDim2.new(0, 0, 0, yPos)
-    btn.BackgroundColor3 = color or Color3.fromRGB(40, 40, 40)
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextScaled = true
-    btn.Font = Enum.Font.GothamBold
-    btn.BorderSizePixel = 0
-    btn.Parent = scrollingFrame
-    btn.AutoButtonColor = true
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
-    btnCorner.Parent = btn
-    
-    return btn
-end
+-- Tombol 1: Hapus Wave Loop
+local button1 = Instance.new("TextButton")
+button1.Size = UDim2.new(1, 0, 0, 50)
+button1.Position = UDim2.new(0, 0, 0, 0)
+button1.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+button1.Text = "Hapus Wave Loop"
+button1.TextColor3 = Color3.fromRGB(255, 255, 255)
+button1.TextScaled = true
+button1.Font = Enum.Font.GothamBold
+button1.BorderSizePixel = 0
+button1.Parent = buttonContainer
 
-local function createSwitch(text, yPos)
-    local container = Instance.new("Frame")
-    container.Size = UDim2.new(1, 0, 0, 30)
-    container.Position = UDim2.new(0, 0, 0, yPos)
-    container.BackgroundTransparency = 1
-    container.Parent = scrollingFrame
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0, 200, 1, 0)
-    label.Position = UDim2.new(0, 0, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextScaled = true
-    label.Font = Enum.Font.GothamBold
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = container
-    
-    local toggle = Instance.new("TextButton")
-    toggle.Size = UDim2.new(0, 50, 0, 25)
-    toggle.Position = UDim2.new(1, -60, 0.5, -12.5)
-    toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    toggle.Text = "OFF"
-    toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    toggle.TextScaled = true
-    toggle.Font = Enum.Font.GothamBold
-    toggle.BorderSizePixel = 0
-    toggle.Parent = container
-    toggle.AutoButtonColor = true
-    
-    local toggleCorner = Instance.new("UICorner")
-    toggleCorner.CornerRadius = UDim.new(0, 12)
-    toggleCorner.Parent = toggle
-    
-    return toggle
-end
+local btn1Corner = Instance.new("UICorner")
+btn1Corner.CornerRadius = UDim.new(0, 8)
+btn1Corner.Parent = button1
 
--- Mulai menempatkan konten
-local yOffset = 0
-local spacing = 5
+-- Tombol 2: Stop Loop
+local button2 = Instance.new("TextButton")
+button2.Size = UDim2.new(1, 0, 0, 50)
+button2.Position = UDim2.new(0, 0, 0, 60)
+button2.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+button2.Text = "Stop Loop"
+button2.TextColor3 = Color3.fromRGB(255, 255, 255)
+button2.TextScaled = true
+button2.Font = Enum.Font.GothamBold
+button2.BorderSizePixel = 0
+button2.Parent = buttonContainer
 
--- Walkspeed Slider
-createLabel("Walkspeed", yOffset)
-yOffset = yOffset + 25 + spacing
+local btn2Corner = Instance.new("UICorner")
+btn2Corner.CornerRadius = UDim.new(0, 8)
+btn2Corner.Parent = button2
 
--- Container untuk slider dan angka
-local sliderRow = Instance.new("Frame")
-sliderRow.Size = UDim2.new(1, 0, 0, 30)
-sliderRow.Position = UDim2.new(0, 0, 0, yOffset)
-sliderRow.BackgroundTransparency = 1
-sliderRow.Parent = scrollingFrame
+-- ===========================================
+-- FOOTER (tetap di bawah)
+-- ===========================================
+local footer = Instance.new("TextLabel")
+footer.Size = UDim2.new(1, 0, 0, 30)
+footer.Position = UDim2.new(0, 0, 1, -35)  -- Posisi absolut di mainFrame
+footer.BackgroundTransparency = 1
+footer.Text = "Azka Script"
+footer.TextColor3 = Color3.fromRGB(180, 180, 180)
+footer.TextScaled = true
+footer.Font = Enum.Font.Gotham
+footer.TextXAlignment = Enum.TextXAlignment.Center
+footer.Parent = mainFrame
 
--- Slider background
-local sliderBg = Instance.new("Frame")
-sliderBg.Size = UDim2.new(0, 200, 0, 10)
-sliderBg.Position = UDim2.new(0, 0, 0.5, -5)
-sliderBg.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-sliderBg.BorderSizePixel = 0
-sliderBg.Parent = sliderRow
+-- ===========================================
+-- FUNGSIONALITAS TOMBOL
+-- ===========================================
+local TweenService = game:GetService("TweenService")
 
-local sliderCorner = Instance.new("UICorner")
-sliderCorner.CornerRadius = UDim.new(0, 5)
-sliderCorner.Parent = sliderBg
+-- State minimize: false = terbuka, true = tertutup
+local isMinimized = false
 
-local sliderButton = Instance.new("TextButton")
-sliderButton.Size = UDim2.new(0, 15, 0, 20)
-sliderButton.Position = UDim2.new(0, 0, 0.5, -10)
-sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sliderButton.Text = ""
-sliderButton.BorderSizePixel = 0
-sliderButton.Parent = sliderBg
-
-local sliderButtonCorner = Instance.new("UICorner")
-sliderButtonCorner.CornerRadius = UDim.new(0, 4)
-sliderButtonCorner.Parent = sliderButton
-
--- Nilai slider di samping
-local wsValue = Instance.new("TextLabel")
-wsValue.Size = UDim2.new(0, 50, 1, 0)
-wsValue.Position = UDim2.new(0, 210, 0, 0)
-wsValue.BackgroundTransparency = 1
-wsValue.Text = "30"
-wsValue.TextColor3 = Color3.fromRGB(255, 255, 255)
-wsValue.TextScaled = true
-wsValue.Font = Enum.Font.GothamBold
-wsValue.Parent = sliderRow
-
-yOffset = yOffset + 30 + spacing
-
--- Tombol VIP (kuning), Hapus Wave, Stop Loop
-local vipBtn = createButton("VIP", yOffset, Color3.fromRGB(255, 255, 0))  -- Kuning
-yOffset = yOffset + 45 + spacing
-
-local waveBtn = createButton("Hapus Wave", yOffset)
-yOffset = yOffset + 45 + spacing
-
-local stopBtn = createButton("Stop Loop", yOffset)
-yOffset = yOffset + 45 + spacing * 2
-
--- Switch
-local collectToggle = createSwitch("Instan Collect", yOffset)
-yOffset = yOffset + 30 + spacing
-
-local proxToggle = createSwitch("Instant Proximity", yOffset)
-yOffset = yOffset + 30 + spacing
-
--- Set CanvasSize
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset)
-
--- ==================================================
--- 6. FUNGSIONALITAS WALKSPEED SLIDER
--- ==================================================
-local minSpeed = 30
-local maxSpeed = 200
-local currentSpeed = 30
-
-local function getCharacter()
-    return localPlayer.Character or localPlayer.CharacterAdded:Wait()
-end
-
-local function updateWalkspeed(value)
-    value = math.clamp(value, minSpeed, maxSpeed)
-    currentSpeed = value
-    wsValue.Text = tostring(math.floor(value))
-    local char = getCharacter()
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.WalkSpeed = value
-    end
-    local percent = (value - minSpeed) / (maxSpeed - minSpeed)
-    sliderButton.Position = UDim2.new(percent, -7, 0.5, -10)
-end
-
-updateWalkspeed(30)
-
-local sliderDragging = false
-sliderButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        sliderDragging = true
-    end
-end)
-
-sliderButton.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        sliderDragging = false
-    end
-end)
-
-userInput.InputChanged:Connect(function(input)
-    if sliderDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local mousePos = input.Position
-        local absPos = sliderBg.AbsolutePosition
-        local absSize = sliderBg.AbsoluteSize
-        local relativeX = mousePos.X - absPos.X
-        local percent = math.clamp(relativeX / absSize.X, 0, 1)
-        local newSpeed = minSpeed + (maxSpeed - minSpeed) * percent
-        updateWalkspeed(newSpeed)
-    end
-end)
-
-localPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    updateWalkspeed(currentSpeed)
-end)
-
--- ==================================================
--- 7. FUNGSIONALITAS TOMBOL VIP
--- ==================================================
-vipBtn.MouseButton1Click:Connect(function()
-    local vipWalls = workspace:FindFirstChild("VIPWalls")
-    if vipWalls then
-        vipWalls:Destroy()
-        print("[VIP] VIPWalls dihapus")
+-- Fungsi untuk animate minimize/maximize
+local function toggleMinimize()
+    if isMinimized then
+        -- Maximize: kembalikan ukuran container ke 120
+        local tween = TweenService:Create(buttonContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, -20, 0, 120)})
+        tween:Play()
     else
-        print("[VIP] VIPWalls tidak ditemukan")
+        -- Minimize: kecilkan container hingga tinggi 0
+        local tween = TweenService:Create(buttonContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, -20, 0, 0)})
+        tween:Play()
     end
-    vipBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
-    task.wait(0.2)
-    vipBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 0)  -- Kembali kuning
+    isMinimized = not isMinimized
+end
+
+-- Event tombol minimize
+minimizeBtn.MouseButton1Click:Connect(toggleMinimize)
+
+-- Event tombol close
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()  -- Hapus seluruh GUI
 end)
 
--- ==================================================
--- 8. FUNGSIONALITAS WAVE LOOP
--- ==================================================
+-- ===========================================
+-- FUNGSIONALITAS PENGHAPUSAN WAVE (client-side)
+-- ===========================================
+local workspace = game:GetService("Workspace")
 local targetNames = {
     "SuperSlow", "Slow", "Medium", "Fast", "SuperFast", "Lightning"
 }
 
-local waveConnection = nil
+local connection = nil
 
 local function deleteExistingModels()
     for _, child in ipairs(workspace:GetChildren()) do
-        if child:IsA("Model") then
-            if table.find(targetNames, child.Name) then
-                child:Destroy()
-            end
-            if child.Name:upper():find("GOD") then
-                child:Destroy()
-            end
-        end
-    end
-end
-
-local function onChildAdded(child)
-    if child:IsA("Model") then
-        if table.find(targetNames, child.Name) or child.Name:upper():find("GOD") then
+        if child:IsA("Model") and table.find(targetNames, child.Name) then
             child:Destroy()
         end
     end
 end
 
-waveBtn.MouseButton1Click:Connect(function()
+local function onChildAdded(child)
+    if child:IsA("Model") and table.find(targetNames, child.Name) then
+        child:Destroy()
+    end
+end
+
+button1.MouseButton1Click:Connect(function()
     deleteExistingModels()
-    if not waveConnection then
-        waveConnection = workspace.ChildAdded:Connect(onChildAdded)
+    if not connection then
+        connection = workspace.ChildAdded:Connect(onChildAdded)
     end
-    waveBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
-    task.wait(0.2)
-    waveBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    -- Feedback visual
+    button1.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+    wait(0.2)
+    button1.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 end)
 
-stopBtn.MouseButton1Click:Connect(function()
-    if waveConnection then
-        waveConnection:Disconnect()
-        waveConnection = nil
+button2.MouseButton1Click:Connect(function()
+    if connection then
+        connection:Disconnect()
+        connection = nil
     end
-    stopBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-    task.wait(0.2)
-    stopBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    button2.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+    wait(0.2)
+    button2.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 end)
 
--- ==================================================
--- 9. FUNGSIONALITAS SWITCH
--- ==================================================
-local collectEnabled = false
-local proxEnabled = false
-local collectThread = nil
-local proxConnections = {}
-
--- Instant Collect: algoritma baru
-local function instantCollectLoop()
-    while collectEnabled do
-        -- Cari CarryPart pada player
-        local playerName = localPlayer.Name
-        local playerModel = workspace:FindFirstChild(playerName)
-        local carryPart = playerModel and playerModel:FindFirstChild("CarryPart")
-        local collectWall = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Collect") and workspace.Map.Collect:FindFirstChild("CollectWall")
-        
-        if carryPart and collectWall then
-            -- Simpan posisi player
-            local character = localPlayer.Character
-            local root = character and character:FindFirstChild("HumanoidRootPart")
-            if root then
-                local savedPos = root.CFrame
-                -- Teleport ke CollectWall
-                root.CFrame = collectWall.CFrame
-                task.wait(0.1)  -- beri waktu untuk proses koleksi
-                -- Cek apakah CarryPart masih ada (apakah sudah terkoleksi?)
-                -- Jika masih ada, mungkin perlu ditunggu? Tapi menurut logika, setelah menyentuh wall, item akan hilang.
-                -- Kita tunggu sampai CarryPart hilang atau timeout
-                local timeout = 0
-                while carryPart and carryPart.Parent and timeout < 50 do
-                    task.wait(0.1)
-                    timeout = timeout + 1
-                    carryPart = playerModel and playerModel:FindFirstChild("CarryPart")
-                end
-                -- Teleport kembali ke posisi semula
-                root.CFrame = savedPos
-            end
-        end
-        task.wait(0.5)  -- deteksi setiap 0.5 detik
-    end
-end
-
-local function setCollectEnabled(state)
-    collectEnabled = state
-    if state then
-        if collectThread then collectThread = nil end
-        collectThread = coroutine.wrap(instantCollectLoop)
-        collectThread()
-        print("[Instant Collect] Activated")
-    else
-        collectEnabled = false
-        print("[Instant Collect] Deactivated")
-    end
-end
-
--- Instant Proximity: perbaikan agar langsung mati saat OFF
-local function setProxEnabled(state)
-    proxEnabled = state
-    if state then
-        -- Set semua yang sudah ada
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("ProximityPrompt") then
-                obj.HoldDuration = 0
-            end
-        end
-        -- Pantau yang baru
-        local conn = workspace.DescendantAdded:Connect(function(desc)
-            if desc:IsA("ProximityPrompt") then
-                desc.HoldDuration = 0
-            end
-        end)
-        table.insert(proxConnections, conn)
-        print("[Instant Proximity] Activated")
-    else
-        -- Putuskan semua koneksi
-        for _, conn in ipairs(proxConnections) do
-            conn:Disconnect()
-        end
-        proxConnections = {}
-        -- Opsional: kembalikan ke default? Tidak, biarkan 0.
-        print("[Instant Proximity] Deactivated")
-    end
-end
-
-collectToggle.MouseButton1Click:Connect(function()
-    collectEnabled = not collectEnabled
-    setCollectEnabled(collectEnabled)
-    if collectEnabled then
-        collectToggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        collectToggle.Text = "ON"
-    else
-        collectToggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        collectToggle.Text = "OFF"
-    end
-end)
-
-proxToggle.MouseButton1Click:Connect(function()
-    proxEnabled = not proxEnabled
-    setProxEnabled(proxEnabled)
-    if proxEnabled then
-        proxToggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        proxToggle.Text = "ON"
-    else
-        proxToggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-        proxToggle.Text = "OFF"
-    end
-end)
-
--- ==================================================
--- 10. DRAG HEADER (DIPERBAIKI TOTAL UNTUK MOBILE & DESKTOP)
--- ==================================================
-local dragging = false
-local dragStartPos = Vector2.new()
-local frameStartPos = UDim2.new()
-
-local function startDrag(input)
-    -- Periksa apakah target adalah tombol minimize/close atau turunannya
-    local target = input.Target
-    if target and (target:IsDescendantOf(minimizeBtn) or target:IsDescendantOf(closeBtn)) then
-        return
-    end
-    dragging = true
-    dragStartPos = input.Position
-    frameStartPos = mainFrame.Position
-end
-
-local function updateDrag(input)
-    if not dragging then return end
-    local delta = input.Position - dragStartPos
-    mainFrame.Position = UDim2.new(
-        frameStartPos.X.Scale,
-        frameStartPos.X.Offset + delta.X,
-        frameStartPos.Y.Scale,
-        frameStartPos.Y.Offset + delta.Y
-    )
-end
-
-local function stopDrag()
-    dragging = false
-end
-
--- Event untuk mouse (desktop)
-header.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        startDrag(input)
-    end
-end)
-
-header.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        stopDrag()
-    end
-end)
-
--- Event untuk sentuhan (mobile)
-header.TouchBegan:Connect(function(touch, gameProcessed)
-    if gameProcessed then return end
-    startDrag(touch)
-end)
-
-header.TouchMoved:Connect(function(touch, gameProcessed)
-    if gameProcessed then return end
-    updateDrag(touch)
-end)
-
-header.TouchEnded:Connect(function(touch, gameProcessed)
-    if gameProcessed then return end
-    stopDrag()
-end)
-
--- Update posisi saat mouse bergerak (desktop)
-userInput.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        updateDrag(input)
-    end
-end)
-
--- Hentikan drag jika sentuhan berakhir di luar header (opsional)
-userInput.TouchEnded:Connect(function(touch, gameProcessed)
-    if gameProcessed then return end
-    stopDrag()
-end)
-
--- ==================================================
--- 11. MINIMIZE ANIMASI
--- ==================================================
-local isMinimized = false
-local originalHeight = mainFrame.Size.Y.Offset
-local minimizedHeight = 45
-
-local function animateMinimize()
-    if isMinimized then
-        scrollingFrame.Visible = true
-        tweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, originalHeight)}):Play()
-    else
-        scrollingFrame.Visible = false
-        tweenService:Create(mainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 300, 0, minimizedHeight)}):Play()
-    end
-    isMinimized = not isMinimized
-end
-
-minimizeBtn.MouseButton1Click:Connect(animateMinimize)
-
--- ==================================================
--- 12. CLOSE
--- ==================================================
-closeBtn.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-end)
-
--- ==================================================
--- 13. DEBUG PATHS
--- ==================================================
-print("=== Path Check ===")
-local playerName = localPlayer.Name
-local carryPart = workspace:FindFirstChild(playerName) and workspace[playerName]:FindFirstChild("CarryPart")
-local collectWall = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Collect") and workspace.Map.Collect:FindFirstChild("CollectWall")
-print("CarryPart found:", carryPart ~= nil)
-print("CollectWall found:", collectWall ~= nil)
-print("==================")
-
--- ==================================================
--- SELESAI
--- ==================================================
-print("GUI Escape Tsunami For Phones berhasil dimuat. Drag support mouse dan touch, tombol berfungsi.")
+print("GUI " .. guiName .. " berhasil dimuat di CoreGui")
