@@ -1,5 +1,5 @@
 -- Script untuk Delta Executor
--- GUI: Escape Tsunami For Phones dengan fitur lengkap
+-- GUI: Escape Tsunami For Phones (Versi Perbaikan)
 
 -- ===========================================
 -- HAPUS GUI LAMA JIKA ADA
@@ -18,10 +18,10 @@ screenGui.Parent = coreGui
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Frame utama (lebih lebar, semua sudut melengkung)
+-- Frame utama (lebar 300, semua sudut melengkung)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 400, 0, 280)  -- Lebar 400, tinggi menyesuaikan konten nanti
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -140)
+mainFrame.Size = UDim2.new(0, 300, 0, 350)  -- Lebar 300, tinggi 350
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
@@ -34,10 +34,10 @@ corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = mainFrame
 
 -- ===========================================
--- HEADER (lebih pendek: 30px, tanpa ikon, hanya judul dan tombol)
+-- HEADER (tinggi 30, tanpa ikon, hanya judul dan tombol)
 -- ===========================================
 local header = Instance.new("Frame")
-header.Size = UDim2.new(1, -10, 0, 30)  -- Tinggi 30 (3/4 dari 40)
+header.Size = UDim2.new(1, -10, 0, 30)
 header.Position = UDim2.new(0, 5, 0, 5)
 header.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 header.BorderSizePixel = 0
@@ -49,7 +49,7 @@ headerCorner.Parent = header
 
 -- Judul
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -70, 1, 0)  -- Beri ruang untuk tombol
+title.Size = UDim2.new(1, -70, 1, 0)
 title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "Escape Tsunami For Phones"
@@ -87,23 +87,24 @@ closeBtn.Parent = header
 -- KONTEN UTAMA (akan dianimasikan saat minimize)
 -- ===========================================
 local contentContainer = Instance.new("Frame")
-contentContainer.Size = UDim2.new(1, -20, 0, 230)  -- Tinggi total konten
+contentContainer.Size = UDim2.new(1, -20, 0, 300)  -- Tinggi konten 300
 contentContainer.Position = UDim2.new(0, 10, 0, 45)  -- Di bawah header
 contentContainer.BackgroundTransparency = 1
 contentContainer.Parent = mainFrame
 contentContainer.ClipsDescendants = true
 
 -- ===========================================
--- 1. SLIDER WALKSPEED
+-- 1. SLIDER WALKSPEED (Label di atas)
 -- ===========================================
 local sliderContainer = Instance.new("Frame")
-sliderContainer.Size = UDim2.new(1, 0, 0, 50)
+sliderContainer.Size = UDim2.new(1, 0, 0, 70)
 sliderContainer.Position = UDim2.new(0, 0, 0, 0)
 sliderContainer.BackgroundTransparency = 1
 sliderContainer.Parent = contentContainer
 
+-- Label Walkspeed di atas
 local wsLabel = Instance.new("TextLabel")
-wsLabel.Size = UDim2.new(0, 100, 1, 0)
+wsLabel.Size = UDim2.new(1, 0, 0, 25)
 wsLabel.Position = UDim2.new(0, 0, 0, 0)
 wsLabel.BackgroundTransparency = 1
 wsLabel.Text = "Walkspeed"
@@ -113,11 +114,11 @@ wsLabel.Font = Enum.Font.GothamBold
 wsLabel.TextXAlignment = Enum.TextXAlignment.Left
 wsLabel.Parent = sliderContainer
 
--- Slider sederhana (Frame dengan button yang bisa digeser)
+-- Slider horizontal
 local sliderBg = Instance.new("Frame")
 sliderBg.Size = UDim2.new(0, 200, 0, 10)
-sliderBg.Position = UDim2.new(0, 110, 0.5, -5)
-sliderBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+sliderBg.Position = UDim2.new(0, 0, 0, 35)  -- Di bawah label
+sliderBg.BackgroundColor3 = Color3.fromRGB(80, 80, 80)  -- Abu-abu terang
 sliderBg.BorderSizePixel = 0
 sliderBg.Parent = sliderContainer
 
@@ -128,7 +129,7 @@ sliderCorner.Parent = sliderBg
 local sliderButton = Instance.new("TextButton")
 sliderButton.Size = UDim2.new(0, 15, 0, 20)
 sliderButton.Position = UDim2.new(0, 0, 0.5, -10)
-sliderButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  -- Putih
 sliderButton.Text = ""
 sliderButton.BorderSizePixel = 0
 sliderButton.Parent = sliderBg
@@ -137,12 +138,13 @@ local sliderCorner2 = Instance.new("UICorner")
 sliderCorner2.CornerRadius = UDim.new(0, 4)
 sliderCorner2.Parent = sliderButton
 
+-- Angka nilai di samping kanan slider
 local wsValue = Instance.new("TextLabel")
-wsValue.Size = UDim2.new(0, 50, 1, 0)
-wsValue.Position = UDim2.new(0, 320, 0, 0)
+wsValue.Size = UDim2.new(0, 50, 0, 25)
+wsValue.Position = UDim2.new(0, 210, 0, 30)  -- Sejajar dengan slider
 wsValue.BackgroundTransparency = 1
 wsValue.Text = "30"
-wsValue.TextColor3 = Color3.fromRGB(0, 255, 0)
+wsValue.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Putih
 wsValue.TextScaled = true
 wsValue.Font = Enum.Font.GothamBold
 wsValue.Parent = sliderContainer
@@ -200,8 +202,8 @@ end)
 -- 2. TOMBOL UTAMA (VIP, Hapus Wave, Stop Loop)
 -- ===========================================
 local buttonContainer = Instance.new("Frame")
-buttonContainer.Size = UDim2.new(1, 0, 0, 160)  -- 3 tombol masing2 50, spasi 10
-buttonContainer.Position = UDim2.new(0, 0, 0, 60)  -- di bawah slider
+buttonContainer.Size = UDim2.new(1, 0, 0, 160)  -- 3 tombol @ 45 + spasi
+buttonContainer.Position = UDim2.new(0, 0, 0, 80)  -- Di bawah slider (70 + 10 spasi)
 buttonContainer.BackgroundTransparency = 1
 buttonContainer.Parent = contentContainer
 
@@ -237,7 +239,7 @@ local stopBtn = createButton("Stop Loop", 110, Color3.fromRGB(40, 40, 40))
 -- ===========================================
 local switchContainer = Instance.new("Frame")
 switchContainer.Size = UDim2.new(1, 0, 0, 70)
-switchContainer.Position = UDim2.new(0, 0, 0, 230)  -- di bawah tombol
+switchContainer.Position = UDim2.new(0, 0, 0, 250)  -- Di bawah tombol (160 + 10 spasi)
 switchContainer.BackgroundTransparency = 1
 switchContainer.Parent = contentContainer
 
@@ -287,22 +289,11 @@ local function createSwitch(text, yPos)
     end
     updateToggle()
     
-    toggleBtn.MouseButton1Click:Connect(function()
-        state = not state
-        updateToggle()
-        -- Panggil fungsi sesuai switch
-        if text == "Instan Collect" then
-            toggleInstantCollect(state)
-        elseif text == "Instant Proximity" then
-            toggleInstantProximity(state)
-        end
-    end)
-    
     return toggleBtn, function() return state end
 end
 
-local collectSwitch, getCollectState = createSwitch("Instan Collect", 0)
-local proxSwitch, getProxState = createSwitch("Instant Proximity", 35)
+local collectToggle, getCollectState = createSwitch("Instan Collect", 0)
+local proxToggle, getProxState = createSwitch("Instant Proximity", 35)
 
 -- ===========================================
 -- FUNGSIONALITAS SWITCH
@@ -310,16 +301,16 @@ local proxSwitch, getProxState = createSwitch("Instant Proximity", 35)
 local workspace = game:GetService("Workspace")
 local players = game:GetService("Players")
 local localPlayer = players.LocalPlayer
-local userInput = game:GetService("UserInputService")
+local collectionService = game:GetService("CollectionService")
 
 -- Variabel untuk koneksi
 local collectConnection = nil
-local proxConnection = nil
+local proxConnections = {}  -- Untuk menyimpan koneksi DescendantAdded
 
--- Fungsi untuk Instant Collect
+-- Fungsi untuk Instant Collect (memindahkan model dari CarryPart ke CollectWall)
 local function toggleInstantCollect(enabled)
     if enabled then
-        -- Cari CarryPart dan CollectWall
+        -- Cari CarryPart milik player
         local playerName = localPlayer.Name
         local carryPart = workspace:FindFirstChild(playerName) and workspace[playerName]:FindFirstChild("CarryPart")
         local collectWall = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Collect") and workspace.Map.Collect:FindFirstChild("CollectWall")
@@ -328,10 +319,11 @@ local function toggleInstantCollect(enabled)
             collectConnection = carryPart.ChildAdded:Connect(function(child)
                 if child:IsA("Model") then
                     -- Pindahkan model ke posisi CollectWall agar terkena TouchInterest
-                    child:SetPrimaryPartCFrame(collectWall.CFrame)
-                    -- Atau langsung destroy (jika game menghapus saat terkoleksi)
-                    -- child:Destroy()
-                    print("Instant Collect: Model dipindahkan ke CollectWall")
+                    local primary = child.PrimaryPart or child:FindFirstChildWhichIsA("BasePart")
+                    if primary then
+                        child:SetPrimaryPartCFrame(collectWall.CFrame)
+                        print("Instant Collect: Model dipindahkan ke CollectWall")
+                    end
                 end
             end)
         else
@@ -345,57 +337,76 @@ local function toggleInstantCollect(enabled)
     end
 end
 
--- Fungsi untuk Instant Proximity (ambil item dari jarak jauh dengan tekan E)
-local function toggleInstantProximity(enabled)
-    if enabled then
-        proxConnection = userInput.InputBegan:Connect(function(input, gameProcessed)
-            if gameProcessed then return end
-            if input.KeyCode == Enum.KeyCode.E then
-                -- Cari ActiveThings folder
-                local activeThings = workspace:FindFirstChild("ActiveThings")
-                if not activeThings then return end
-                
-                -- Cari model terdekat dengan player
-                local character = localPlayer.Character
-                if not character then return end
-                local root = character:FindFirstChild("HumanoidRootPart")
-                if not root then return end
-                
-                local closestDist = math.huge
-                local closestModel = nil
-                for _, model in ipairs(activeThings:GetChildren()) do
-                    if model:IsA("Model") then
-                        local prim = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
-                        if prim then
-                            local dist = (prim.Position - root.Position).Magnitude
-                            if dist < closestDist then
-                                closestDist = dist
-                                closestModel = model
-                            end
-                        end
-                    end
-                end
-                
-                if closestModel then
-                    -- Pindahkan ke CollectWall atau langsung koleksi
-                    local collectWall = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Collect") and workspace.Map.Collect:FindFirstChild("CollectWall")
-                    if collectWall then
-                        closestModel:SetPrimaryPartCFrame(collectWall.CFrame)
-                        print("Instant Proximity: Model dipindahkan ke CollectWall")
-                    else
-                        closestModel:Destroy()
-                        print("Instant Proximity: Model dihancurkan (asumsi terkoleksi)")
-                    end
-                end
-            end
-        end)
-    else
-        if proxConnection then
-            proxConnection:Disconnect()
-            proxConnection = nil
+-- Fungsi untuk mengubah HoldDuration semua ProximityPrompt menjadi 0
+local function setAllProximityPrompts(value)
+    -- Cari semua ProximityPrompt yang sudah ada
+    for _, obj in ipairs(collectionService:GetTagged("ProximityPrompt")) do
+        if obj:IsA("ProximityPrompt") then
+            obj.HoldDuration = value
+        end
+    end
+    -- Cari juga melalui Descendant
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") then
+            obj.HoldDuration = value
         end
     end
 end
+
+-- Fungsi untuk Instant Proximity
+local function toggleInstantProximity(enabled)
+    if enabled then
+        -- Ubah semua yang sudah ada
+        setAllProximityPrompts(0)
+        -- Pantau yang baru muncul
+        local conn = workspace.DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("ProximityPrompt") then
+                descendant.HoldDuration = 0
+            end
+        end)
+        table.insert(proxConnections, conn)
+    else
+        -- Hentikan pantauan, tapi tidak mengembalikan nilai (biarkan 0)
+        for _, conn in ipairs(proxConnections) do
+            conn:Disconnect()
+        end
+        proxConnections = {}
+        -- Opsional: jika ingin mengembalikan ke default? Tidak tahu default, jadi biarkan.
+    end
+end
+
+-- Hubungkan toggle dengan fungsi
+collectToggle.MouseButton1Click:Connect(function()
+    local state = not getCollectState()
+    -- Toggle state manual karena kita tidak pakai return dari createSwitch
+    -- Kita simpan state secara manual
+    collectToggle.State = state
+    if state then
+        collectToggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        collectToggle.Text = "ON"
+    else
+        collectToggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        collectToggle.Text = "OFF"
+    end
+    toggleInstantCollect(state)
+end)
+
+proxToggle.MouseButton1Click:Connect(function()
+    local state = not getProxState()
+    proxToggle.State = state
+    if state then
+        proxToggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        proxToggle.Text = "ON"
+    else
+        proxToggle.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        proxToggle.Text = "OFF"
+    end
+    toggleInstantProximity(state)
+end)
+
+-- Inisialisasi state
+collectToggle.State = false
+proxToggle.State = false
 
 -- ===========================================
 -- FUNGSIONALITAS TOMBOL
@@ -414,7 +425,6 @@ end)
 -- Daftar nama target untuk Wave Loop
 local targetNames = {
     "SuperSlow", "Slow", "Medium", "Fast", "SuperFast", "Lightning"
-    -- Tambahkan "God" untuk model yang mengandung kata God di Workspace langsung
 }
 
 local waveConnection = nil
@@ -426,7 +436,7 @@ local function deleteExistingModels()
             if table.find(targetNames, child.Name) then
                 child:Destroy()
             end
-            -- Cek juga jika nama mengandung "God" (case insensitive)
+            -- Cek juga jika nama mengandung "GOD" (case insensitive)
             if child.Name:upper():find("GOD") then
                 child:Destroy()
             end
@@ -503,18 +513,18 @@ local TweenService = game:GetService("TweenService")
 local isMinimized = false
 local originalMainHeight = mainFrame.Size.Y.Offset
 local originalContentHeight = contentContainer.Size.Y.Offset
-local minimizedMainHeight = 45  -- Header (30) + padding atas/bawah
+local minimizedMainHeight = 45  -- Header (30) + padding atas/bawah (5+10)
 
 local function toggleMinimize()
     if isMinimized then
         -- Maximize
-        local tweenMain = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 400, 0, originalMainHeight)})
+        local tweenMain = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 300, 0, originalMainHeight)})
         local tweenContent = TweenService:Create(contentContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, -20, 0, originalContentHeight)})
         tweenMain:Play()
         tweenContent:Play()
     else
         -- Minimize
-        local tweenMain = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 400, 0, minimizedMainHeight)})
+        local tweenMain = TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 300, 0, minimizedMainHeight)})
         local tweenContent = TweenService:Create(contentContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, -20, 0, 0)})
         tweenMain:Play()
         tweenContent:Play()
@@ -534,4 +544,4 @@ end)
 -- ===========================================
 -- INITIAL SETUP
 -- ===========================================
-print("GUI Escape Tsunami For Phones berhasil dimuat")
+print("GUI Escape Tsunami For Phones berhasil dimuat (lebar 300, slider di atas)")
