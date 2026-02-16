@@ -1,5 +1,5 @@
 -- Script Profesional untuk Delta Executor
--- GUI: Escape Tsunami For Phones (Versi Final dengan Drag yang Pasti Berfungsi)
+-- GUI: Escape Tsunami For Phones (Versi Final dengan Drag Header yang Sempurna)
 
 -- ==================================================
 -- 1. KONFIGURASI AWAL
@@ -27,7 +27,7 @@ screenGui.Parent = coreGui
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Frame utama dengan ukuran tetap
+-- Frame utama
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 300, 0, 350)
 mainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
@@ -42,7 +42,7 @@ uiCorner.CornerRadius = UDim.new(0, 8)
 uiCorner.Parent = mainFrame
 
 -- ==================================================
--- 3. HEADER (dapat digeser) - Desain baru yang lebih sederhana
+-- 3. HEADER (area drag utama)
 -- ==================================================
 local header = Instance.new("Frame")
 header.Size = UDim2.new(1, -10, 0, 30)
@@ -56,7 +56,7 @@ local headerCorner = Instance.new("UICorner")
 headerCorner.CornerRadius = UDim.new(0, 6)
 headerCorner.Parent = header
 
--- Judul (area drag utama)
+-- Judul
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -70, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
@@ -471,75 +471,35 @@ end)
 -- ==================================================
 -- 10. DRAG HEADER (METODE PALING SEDERHANA DAN PASTI)
 -- ==================================================
--- Solusi: Gunakan Draggable pada mainFrame, tetapi batasi area drag hanya dari header
--- dengan cara menonaktifkan sementara Draggable saat mouse di luar header? Tidak perlu.
--- Alternatif: Set mainFrame.Draggable = true, lalu tangkap event drag dari header saja.
--- Tapi Draggable otomatis akan membuat seluruh frame bisa di-drag. Kita bisa atur
--- mainFrame.Draggable = false, lalu gunakan event mouse pada header untuk menggerakkan mainFrame.
-
--- Metode yang paling reliable: gunakan event InputBegan pada header, lalu hubungkan ke
--- UserInputService.InputChanged untuk mengupdate posisi. Ini sudah kita coba, tapi mungkin
--- ada masalah dengan event propagation. Mari kita coba dengan menambahkan
--- mainFrame.Active = true dan mainFrame.Draggable = false, serta memastikan tidak ada
--- yang menghalangi.
-
--- Kita buat fungsi drag yang berdiri sendiri:
-
+-- Gunakan event MouseButton1Down pada header untuk memulai drag.
+-- Tombol minimize/close memiliki event sendiri sehingga tidak akan memicu drag.
 local dragging = false
-local dragStartPos
-local frameStartPos
+local dragStart
+local startPos
 
-local function onInputBegan(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        -- Cek apakah mouse berada di atas header dan bukan tombol
-        local mousePos = userInput:GetMouseLocation()
-        local absPos = header.AbsolutePosition
-        local absSize = header.AbsoluteSize
-        if mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and
-           mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y then
-            -- Cek apakah target bukan tombol
-            local target = userInput:GetMouseLocation() -- tidak bisa dapat target, kita cek dengan metode lain
-            -- Alternatif: kita asumsikan jika mouse di header dan bukan di area tombol
-            local btnMinPos = minimizeBtn.AbsolutePosition
-            local btnMinSize = minimizeBtn.AbsoluteSize
-            local btnClosePos = closeBtn.AbsolutePosition
-            local btnCloseSize = closeBtn.AbsoluteSize
-            
-            local overMin = mousePos.X >= btnMinPos.X and mousePos.X <= btnMinPos.X + btnMinSize.X and
-                           mousePos.Y >= btnMinPos.Y and mousePos.Y <= btnMinPos.Y + btnMinSize.Y
-            local overClose = mousePos.X >= btnClosePos.X and mousePos.X <= btnClosePos.X + btnCloseSize.X and
-                              mousePos.Y >= btnClosePos.Y and mousePos.Y <= btnClosePos.Y + btnCloseSize.Y
-            
-            if not overMin and not overClose then
-                dragging = true
-                dragStartPos = input.Position
-                frameStartPos = mainFrame.Position
-            end
-        end
-    end
-end
+header.MouseButton1Down:Connect(function()
+    dragging = true
+    dragStart = userInput:GetMouseLocation()
+    startPos = mainFrame.Position
+end)
 
-local function onInputChanged(input)
+userInput.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStartPos
+        local delta = input.Position - dragStart
         mainFrame.Position = UDim2.new(
-            frameStartPos.X.Scale,
-            frameStartPos.X.Offset + delta.X,
-            frameStartPos.Y.Scale,
-            frameStartPos.Y.Offset + delta.Y
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
         )
     end
-end
+end)
 
-local function onInputEnded(input)
+userInput.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = false
     end
-end
-
-userInput.InputBegan:Connect(onInputBegan)
-userInput.InputChanged:Connect(onInputChanged)
-userInput.InputEnded:Connect(onInputEnded)
+end)
 
 -- ==================================================
 -- 11. MINIMIZE ANIMASI
@@ -566,10 +526,6 @@ minimizeBtn.MouseButton1Click:Connect(animateMinimize)
 -- ==================================================
 closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
-    -- Putuskan koneksi drag (opsional)
-    userInput.InputBegan:Disconnect()
-    userInput.InputChanged:Disconnect()
-    userInput.InputEnded:Disconnect()
 end)
 
 -- ==================================================
@@ -586,4 +542,4 @@ print("==================")
 -- ==================================================
 -- SELESAI
 -- ==================================================
-print("GUI Escape Tsunami For Phones berhasil dimuat. Drag header menggunakan UserInputService global.")
+print("GUI Escape Tsunami For Phones berhasil dimuat. Drag header menggunakan event MouseButton1Down.")
