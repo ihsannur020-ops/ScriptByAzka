@@ -2,7 +2,7 @@
 -- Tidak menghasilkan output ke console
 
 local gameScripts = {
-    [119987266683883] = "https://raw.githubusercontent.com/gumanba/Scripts/refs/heads/main/SurviveLAVAforBrainrots"
+    [119987266683883] = "https://raw.githubusercontent.com/ihsannur020-ops/SpeedControl-Azka/refs/heads/main/SurviveLAVAforBrainrots"
     -- Tambahkan ID dan URL lain di sini
 }
 
