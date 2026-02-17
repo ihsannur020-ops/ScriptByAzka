@@ -28,14 +28,14 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- Frame utama (dapat digeser)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 200)      -- Ukuran dapat diubah
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100) -- Posisi tengah
+mainFrame.Size = UDim2.new(0, 300, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
 mainFrame.Active = true
-mainFrame.Draggable = true   -- Mengizinkan penggeseran
+mainFrame.Draggable = true
 mainFrame.Parent = screenGui
 
 -- Sudut melengkung untuk frame utama
@@ -43,23 +43,24 @@ local uiCorner = Instance.new("UICorner")
 uiCorner.CornerRadius = UDim.new(0, 8)
 uiCorner.Parent = mainFrame
 
--- Judul UI
+-- Judul UI (pojok kiri)
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -10, 0, 30)
-title.Position = UDim2.new(0, 5, 0, 5)
+title.Size = UDim2.new(0, 150, 0, 30)
+title.Position = UDim2.new(0, 10, 0, 5)
 title.BackgroundTransparency = 1
-title.Text = "Escape Tsunami For Phones"
+title.Text = "NamaGame"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 20
+title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = mainFrame
 
--- Tombol Minimize
+-- Tombol Minimize (sekarang "+")
 local minimizeBtn = Instance.new("TextButton")
-minimizeBtn.Size = UDim2.new(0, 25, 0, 25)
-minimizeBtn.Position = UDim2.new(1, -60, 0, 5)
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -70, 0, 5)
 minimizeBtn.BackgroundTransparency = 1
-minimizeBtn.Text = "—"
+minimizeBtn.Text = "+"
 minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 minimizeBtn.TextScaled = true
 minimizeBtn.Font = Enum.Font.GothamBold
@@ -68,8 +69,8 @@ minimizeBtn.Parent = mainFrame
 
 -- Tombol Close
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 25, 0, 25)
-closeBtn.Position = UDim2.new(1, -30, 0, 5)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
 closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -93,7 +94,7 @@ scrollingFrame.Parent = mainFrame
 scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
 -- ==================================================
--- 4. MINIMIZED FRAME (KOTAK KECIL)
+-- 4. MINIMIZED FRAME (KOTAK KECIL DENGAN SUDUT MELINGKAR)
 -- ==================================================
 local minimizedFrame = Instance.new("Frame")
 minimizedFrame.Size = UDim2.new(0, 50, 0, 50)
@@ -103,20 +104,20 @@ minimizedFrame.BackgroundTransparency = 0
 minimizedFrame.BorderSizePixel = 1
 minimizedFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
 minimizedFrame.Active = true
-minimizedFrame.Draggable = true
-minimizedFrame.Visible = false  -- Mulai tersembunyi
+minimizedFrame.Draggable = true  -- tetap bisa digeser
+minimizedFrame.Visible = false
 minimizedFrame.Parent = screenGui
 
--- Sudut sangat melingkar (lingkaran sempurna)
+-- Sudut melingkar (radius 8)
 local miniCorner = Instance.new("UICorner")
-miniCorner.CornerRadius = UDim.new(0, 25) -- 25 karena 50/2 = 25
+miniCorner.CornerRadius = UDim.new(0, 8)
 miniCorner.Parent = minimizedFrame
 
--- Teks di tengah ( + dan bolt ⚡ )
+-- Teks "+" di tengah (tanpa bolt)
 local miniLabel = Instance.new("TextLabel")
 miniLabel.Size = UDim2.new(1, 0, 1, 0)
 miniLabel.BackgroundTransparency = 1
-miniLabel.Text = "+ ⚡"  -- Tambahkan bolt
+miniLabel.Text = "+"
 miniLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 miniLabel.TextScaled = true
 miniLabel.Font = Enum.Font.GothamBold
@@ -130,13 +131,10 @@ minimizeBtn.MouseButton1Click:Connect(function()
     minimizedFrame.Visible = true
 end)
 
-minimizedFrame.MouseButton1Click:Connect(function()
-    minimizedFrame.Visible = false
-    mainFrame.Visible = true
-end)
+-- Minimized frame TIDAK bisa diklik untuk kembali (tidak ada event klik)
 
 -- ==================================================
--- 6. CLOSE
+-- 6. CLOSE (tetap berfungsi)
 -- ==================================================
 closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
@@ -145,4 +143,4 @@ end)
 -- ==================================================
 -- SELESAI
 -- ==================================================
-print("GUI [Nama Gui] Berhasil di muat.")
+print("GUI [NamaGame] Berhasil dimuat.")
