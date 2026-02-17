@@ -93,7 +93,7 @@ scrollingFrame.Parent = mainFrame
 scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
 -- ==================================================
--- 4. MINIMIZED FRAME (KOTAK KECIL) - DRAG MANUAL
+-- 4. MINIMIZED FRAME (KOTAK KECIL) - DRAG + CLICK
 -- ==================================================
 local minimizedFrame = Instance.new("Frame")
 minimizedFrame.Size = UDim2.new(0, 50, 0, 50)
@@ -120,47 +120,55 @@ miniLabel.TextSize = 24
 miniLabel.Font = Enum.Font.GothamBold
 miniLabel.Parent = minimizedFrame
 
--- TextButton transparan untuk menangani klik (restore)
+-- TextButton transparan untuk menangani input
 local miniButton = Instance.new("TextButton")
 miniButton.Size = UDim2.new(1, 0, 1, 0)
 miniButton.BackgroundTransparency = 1
 miniButton.Text = ""
 miniButton.Parent = minimizedFrame
 
--- Drag manual untuk minimized frame
+-- Variabel untuk drag + click
 local dragging = false
 local dragStartPos
 local frameStartPos
+local isDragging = false
+local dragThreshold = 5  -- pixel, untuk membedakan click dan drag
 
-miniButton.MouseButton1Down:Connect(function(input)
+miniButton.MouseButton1Down:Connect(function()
     dragging = true
     dragStartPos = userInput:GetMouseLocation()
     frameStartPos = minimizedFrame.Position
+    isDragging = false
 end)
 
 userInput.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local currentPos = userInput:GetMouseLocation()
         local delta = currentPos - dragStartPos
-        minimizedFrame.Position = UDim2.new(
-            frameStartPos.X.Scale,
-            frameStartPos.X.Offset + delta.X,
-            frameStartPos.Y.Scale,
-            frameStartPos.Y.Offset + delta.Y
-        )
+        -- Jika sudah melewati threshold, tandai sebagai drag
+        if not isDragging and (delta.X^2 + delta.Y^2) > dragThreshold^2 then
+            isDragging = true
+        end
+        if isDragging then
+            minimizedFrame.Position = UDim2.new(
+                frameStartPos.X.Scale,
+                frameStartPos.X.Offset + delta.X,
+                frameStartPos.Y.Scale,
+                frameStartPos.Y.Offset + delta.Y
+            )
+        end
     end
 end)
 
 userInput.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and dragging then
+        if not isDragging then
+            -- Ini adalah click, restore main frame
+            minimizedFrame.Visible = false
+            mainFrame.Visible = true
+        end
         dragging = false
     end
-end)
-
--- Klik untuk restore
-miniButton.MouseButton1Click:Connect(function()
-    minimizedFrame.Visible = false
-    mainFrame.Visible = true
 end)
 
 -- ==================================================
