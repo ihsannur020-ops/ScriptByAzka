@@ -8,7 +8,7 @@ local coreGui = game:GetService("CoreGui")
 local players = game:GetService("Players")
 local userInput = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
-local virtualUser = game:GetService("VirtualUser")  -- Untuk simulasi input
+local virtualUser = game:GetService("VirtualUser")
 local tweenService = game:GetService("TweenService")
 
 local localPlayer = players.LocalPlayer
@@ -34,8 +34,8 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- Frame utama (dapat digeser)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 400, 0, 450)  -- sedikit lebih besar untuk banyak konten
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -225)
+mainFrame.Size = UDim2.new(0, 400, 0, 500)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 2
@@ -106,13 +106,12 @@ scrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
 scrollLayout.Padding = UDim.new(0, 10)
 
 -- ==================================================
--- 4. MEMBUAT KONTAINER (SLIDE, TOMBOL, SWITCH)
+-- 4. MEMBUAT KONTAINER
 -- ==================================================
--- Fungsi untuk membuat container dengan background transparan
 local function createContainer(name)
     local container = Instance.new("Frame")
     container.Name = name
-    container.Size = UDim2.new(1, 0, 0, 0)  -- akan membesar otomatis
+    container.Size = UDim2.new(1, 0, 0, 0)
     container.BackgroundTransparency = 1
     container.Parent = scrollingFrame
     container.AutomaticSize = Enum.AutomaticSize.Y
@@ -125,17 +124,16 @@ local function createContainer(name)
     return container
 end
 
--- Buat tiga container sesuai urutan: Slide, Tombol, Switch
 local slideContainer = createContainer("SlideContainer")
 local buttonContainer = createContainer("ButtonContainer")
 local switchContainer = createContainer("SwitchContainer")
 
 -- ==================================================
--- 5. FUNGSI-FUNGSI UNTUK MENAMBAH ELEMEN KE KONTAINER
+-- 5. FUNGSI-FUNGSI UNTUK MENAMBAH ELEMEN
 -- ==================================================
 local UI = {}
 
--- Fungsi untuk membuat slider (menggunakan track dan thumb sederhana)
+-- Fungsi slider (tetap sama)
 function UI.AddSlider(config)
     local container = slideContainer
     local text = config.Text or "Slider"
@@ -149,7 +147,6 @@ function UI.AddSlider(config)
     frame.BackgroundTransparency = 1
     frame.Parent = container
 
-    -- Label teks
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, -60, 1, 0)
     label.BackgroundTransparency = 1
@@ -160,7 +157,6 @@ function UI.AddSlider(config)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
-    -- Nilai slider (angka)
     local valueLabel = Instance.new("TextLabel")
     valueLabel.Size = UDim2.new(0, 50, 1, 0)
     valueLabel.Position = UDim2.new(1, -50, 0, 0)
@@ -172,7 +168,6 @@ function UI.AddSlider(config)
     valueLabel.TextXAlignment = Enum.TextXAlignment.Right
     valueLabel.Parent = frame
 
-    -- Track slider
     local track = Instance.new("Frame")
     track.Size = UDim2.new(1, 0, 0, 4)
     track.Position = UDim2.new(0, 0, 1, -8)
@@ -194,7 +189,6 @@ function UI.AddSlider(config)
     thumb.BorderSizePixel = 0
     thumb.Parent = track
 
-    -- Sudut melingkar
     local thumbCorner = Instance.new("UICorner")
     thumbCorner.CornerRadius = UDim.new(0, 6)
     thumbCorner.Parent = thumb
@@ -202,7 +196,6 @@ function UI.AddSlider(config)
     trackCorner.CornerRadius = UDim.new(0, 2)
     trackCorner.Parent = track
 
-    -- Interaksi slider
     local dragging = false
     thumb.MouseButton1Down:Connect(function()
         dragging = true
@@ -221,7 +214,7 @@ function UI.AddSlider(config)
             local relativeX = math.clamp(mousePos.X - trackAbsPos.X, 0, trackSize.X)
             local percent = relativeX / trackSize.X
             local value = min + (max - min) * percent
-            value = math.floor(value * 100) / 100  -- pembulatan 2 desimal
+            value = math.floor(value * 100) / 100
             valueLabel.Text = tostring(value)
             fill.Size = UDim2.new(percent, 0, 1, 0)
             thumb.Position = UDim2.new(percent, -6, 0, -4)
@@ -232,7 +225,7 @@ function UI.AddSlider(config)
     return frame
 end
 
--- Fungsi untuk membuat tombol
+-- Fungsi tombol (tetap sama)
 function UI.AddButton(config)
     local container = buttonContainer
     local text = config.Text or "Button"
@@ -254,7 +247,6 @@ function UI.AddButton(config)
 
     button.MouseButton1Click:Connect(callback)
 
-    -- Efek hover
     button.MouseEnter:Connect(function()
         button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     end)
@@ -265,7 +257,7 @@ function UI.AddButton(config)
     return button
 end
 
--- Fungsi untuk membuat switch
+-- Fungsi switch dengan gaya checkbox (kotak dengan centang)
 function UI.AddSwitch(config)
     local container = switchContainer
     local text = config.Text or "Switch"
@@ -279,7 +271,7 @@ function UI.AddSwitch(config)
 
     -- Label
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -60, 1, 0)
+    label.Size = UDim2.new(1, -40, 1, 0)
     label.BackgroundTransparency = 1
     label.Text = text
     label.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -288,39 +280,44 @@ function UI.AddSwitch(config)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
-    -- Tombol switch
-    local switchBtn = Instance.new("TextButton")
-    switchBtn.Size = UDim2.new(0, 50, 0, 24)
-    switchBtn.Position = UDim2.new(1, -50, 0.5, -12)
-    switchBtn.BackgroundColor3 = default and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(80, 80, 80)
-    switchBtn.Text = ""
-    switchBtn.BorderSizePixel = 0
-    switchBtn.Parent = frame
+    -- Kotak checkbox
+    local checkBox = Instance.new("Frame")
+    checkBox.Size = UDim2.new(0, 24, 0, 24)
+    checkBox.Position = UDim2.new(1, -30, 0.5, -12)
+    checkBox.BackgroundColor3 = default and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(60, 60, 60)
+    checkBox.BorderSizePixel = 1
+    checkBox.BorderColor3 = Color3.fromRGB(120, 120, 120)
+    checkBox.Parent = frame
 
-    local switchCorner = Instance.new("UICorner")
-    switchCorner.CornerRadius = UDim.new(0, 12)
-    switchCorner.Parent = switchBtn
+    local checkCorner = Instance.new("UICorner")
+    checkCorner.CornerRadius = UDim.new(0, 4)
+    checkCorner.Parent = checkBox
 
-    -- Lingkaran dalam
-    local circle = Instance.new("Frame")
-    circle.Size = UDim2.new(0, 20, 0, 20)
-    circle.Position = default and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 4, 0.5, -10)
-    circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    circle.BorderSizePixel = 0
-    circle.Parent = switchBtn
+    -- Centang (menggunakan ImageLabel dengan image checkmark)
+    local checkMark = Instance.new("ImageLabel")
+    checkMark.Size = UDim2.new(0, 16, 0, 16)
+    checkMark.Position = UDim2.new(0.5, -8, 0.5, -8)
+    checkMark.BackgroundTransparency = 1
+    checkMark.Image = "rbxasset://textures/ui/check.png" -- Asset checkmark Roblox
+    checkMark.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    checkMark.Visible = default
+    checkMark.Parent = checkBox
 
-    local circleCorner = Instance.new("UICorner")
-    circleCorner.CornerRadius = UDim.new(0, 10)
-    circleCorner.Parent = circle
+    -- Tombol untuk klik
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 1, 0)
+    button.BackgroundTransparency = 1
+    button.Text = ""
+    button.Parent = frame
 
     local state = default
 
     local function updateSwitch()
-        switchBtn.BackgroundColor3 = state and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(80, 80, 80)
-        circle.Position = state and UDim2.new(1, -24, 0.5, -10) or UDim2.new(0, 4, 0.5, -10)
+        checkBox.BackgroundColor3 = state and Color3.fromRGB(0, 120, 255) or Color3.fromRGB(60, 60, 60)
+        checkMark.Visible = state
     end
 
-    switchBtn.MouseButton1Click:Connect(function()
+    button.MouseButton1Click:Connect(function()
         state = not state
         updateSwitch()
         callback(state)
@@ -361,7 +358,7 @@ miniButton.BackgroundTransparency = 1
 miniButton.Text = ""
 miniButton.Parent = minimizedFrame
 
--- Drag untuk minimizedFrame
+-- Drag
 local dragging = false
 local dragStartPos
 local frameStartPos
@@ -416,30 +413,80 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==================================================
--- 8. PENAMBAHAN ELEMEN SESUAI PERMINTAAN
+-- 8. LOGIKA UTAMA (GET PLOT, AUTO, DLL)
 -- ==================================================
 
 -- Variabel global untuk menyimpan plot player
 local PlotPlayerSave = nil
 
--- Fungsi untuk mendapatkan plot player dari server
+-- Fungsi untuk mendapatkan plot player dari server (hanya sekali dijalankan)
 local function getPlayerPlot()
-    local remoteBank = game:GetService("ReplicatedStorage"):FindFirstChild("RemoteBank")
+    local replicatedStorage = game:GetService("ReplicatedStorage")
+    local remoteBank = replicatedStorage:FindFirstChild("RemoteBank")
     if remoteBank then
-        local getPlotFunc = remoteBank:FindFirstChild("GetPlot")
-        if getPlotFunc and getPlotFunc:IsA("RemoteFunction") then
-            local success, result = pcall(function()
-                return getPlotFunc:InvokeServer()
-            end)
-            if success and result then
-                PlotPlayerSave = result
-                print("Plot player:", PlotPlayerSave)
-                return result
+        -- Cari fungsi GetPlot
+        local getPlot = remoteBank:FindFirstChild("GetPlot")
+        if getPlot then
+            -- Cek tipe remote
+            if getPlot:IsA("RemoteFunction") then
+                local success, result = pcall(function()
+                    return getPlot:InvokeServer()
+                end)
+                if success and result then
+                    PlotPlayerSave = result
+                    print("Plot player didapatkan:", PlotPlayerSave)
+                    return result
+                else
+                    warn("Gagal memanggil GetPlot RemoteFunction")
+                end
+            elseif getPlot:IsA("RemoteEvent") then
+                -- Jika RemoteEvent, kita perlu mendengarkan respon. Biasanya ada event lain.
+                -- Untuk sederhana, kita asumsikan respon dikirim ke event tertentu.
+                -- Tapi kita tidak punya info, jadi kita coba panggil dan tunggu.
+                local responseEvent = remoteBank:FindFirstChild("GetPlotResponse") -- asumsi
+                if responseEvent and responseEvent:IsA("RemoteEvent") then
+                    responseEvent.OnClientEvent:Connect(function(plot)
+                        PlotPlayerSave = plot
+                        print("Plot player diterima:", plot)
+                    end)
+                    getPlot:FireServer()
+                    -- Tunggu sebentar
+                    wait(1)
+                else
+                    warn("Tidak ada response event untuk GetPlot")
+                end
+            end
+        else
+            warn("GetPlot tidak ditemukan di RemoteBank")
+        end
+    else
+        warn("RemoteBank tidak ditemukan")
+    end
+
+    -- Fallback: coba cari di tempat lain? atau gunakan data dari workspace?
+    if not PlotPlayerSave then
+        -- Coba deteksi dari posisi player saat ini (asumsi plot berdasarkan posisi)
+        local currentPos = rootPart.Position
+        local floorSpawnCoords = {
+            Vector3.new(123.879, 56, -117.25),
+            Vector3.new(123.879, 56, -57.25),
+            Vector3.new(123.879, 56, 2.75),
+            Vector3.new(123.879, 56, 62.75),
+            Vector3.new(123.879, 56, 122.75)
+        }
+        for i, coord in ipairs(floorSpawnCoords) do
+            if (currentPos - coord).Magnitude < 10 then
+                PlotPlayerSave = i
+                print("Plot player terdeteksi dari posisi:", i)
+                break
             end
         end
     end
-    warn("Gagal mendapatkan plot player")
-    return nil
+
+    if not PlotPlayerSave then
+        PlotPlayerSave = 1 -- default
+        print("Plot player tidak diketahui, menggunakan default 1")
+    end
 end
 
 -- Panggil saat script dimuat
@@ -482,13 +529,13 @@ local function isPlayerInRadius(position, radius)
 end
 
 -- Fungsi untuk mencari entity dengan rarity tertentu
-local function findEntityByRarity(rarityPattern, excludeRarities)
+local function findEntityByRarity(rarityPattern)
     local entitiesFolder = workspace:FindFirstChild("EntitiesFolder")
     if not entitiesFolder then return nil end
 
     for _, model in ipairs(entitiesFolder:GetChildren()) do
         if model:IsA("Model") then
-            -- Cari MeshPart di dalam model (langsung, bukan di child lain)
+            -- Cari MeshPart di dalam model (langsung)
             local meshPart = model:FindFirstChildOfClass("MeshPart") or model:FindFirstChildOfClass("Part")
             if meshPart then
                 local billboard = meshPart:FindFirstChild("EntityBillboardTemplate")
@@ -496,7 +543,6 @@ local function findEntityByRarity(rarityPattern, excludeRarities)
                     local rarityLabel = billboard:FindFirstChild("RarityLabel")
                     if rarityLabel and rarityLabel:IsA("TextLabel") then
                         local text = rarityLabel.Text
-                        -- Cek apakah sesuai pattern
                         if rarityPattern == "Event" then
                             -- Event: selain common, uncommon, rare, epic, legendary, mythical, secret, celestial, OG, divine
                             local commonRarities = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical", "Secret", "Celestial", "OG", "Divine"}
@@ -528,21 +574,18 @@ local function interactWithEntity(entity)
     if not entity then return end
     -- Cari proximity prompt di entity
     local prompt = entity:FindFirstChildOfClass("ProximityPrompt")
+    if not prompt then
+        -- Cari di seluruh descendant
+        prompt = entity:FindFirstChildWhichIsA("ProximityPrompt", true)
+    end
     if prompt then
         -- Simulasi hold E
         prompt:InputHold()
-        wait(1.7)
+        wait(1.7)  -- tunggu 1.7 detik
         prompt:InputEnd()
+        print("Interaksi selesai")
     else
-        -- Alternatif: coba cari di dalam mesh part
-        for _, child in ipairs(entity:GetDescendants()) do
-            if child:IsA("ProximityPrompt") then
-                child:InputHold()
-                wait(1.7)
-                child:InputEnd()
-                break
-            end
-        end
+        warn("Tidak ada ProximityPrompt pada entity")
     end
 end
 
@@ -563,7 +606,7 @@ local rarityPriority = {"Event", "Divine", "OG", "Celestial", "Secret"}
 -- Fungsi utama auto rarity
 local function autoRarityLoop()
     while true do
-        wait(0.5) -- cek setiap 0.5 detik
+        wait(0.5)
         local targetRarity = nil
         for _, rarity in ipairs(rarityPriority) do
             if autoStates[rarity] then
@@ -579,21 +622,29 @@ local function autoRarityLoop()
         -- Cari entity dengan rarity target
         local entity = findEntityByRarity(targetRarity)
         if entity then
-            -- Cek apakah ada pemain lain dalam radius 3
-            local entityPos = entity:GetPrimaryPartCFrame().Position or entity:FindFirstChildOfClass("MeshPart").Position
-            if not isPlayerInRadius(entityPos, 3) then
-                -- Teleport ke entity
-                rootPart.CFrame = CFrame.new(entityPos)
-                wait(0.5) -- tunggu sebentar
-                -- Interaksi
-                interactWithEntity(entity)
-                -- Kembali ke base
-                teleportToBase()
-                -- Tunggu 1 detik sebelum loop berikutnya
-                wait(1)
+            -- Dapatkan posisi entity
+            local primaryPart = entity.PrimaryPart
+            if not primaryPart then
+                primaryPart = entity:FindFirstChildOfClass("MeshPart") or entity:FindFirstChildOfClass("Part")
+            end
+            if primaryPart then
+                local entityPos = primaryPart.Position
+                -- Cek apakah ada pemain lain dalam radius 3
+                if not isPlayerInRadius(entityPos, 3) then
+                    -- Teleport ke entity
+                    rootPart.CFrame = CFrame.new(entityPos)
+                    wait(0.5)
+                    -- Interaksi
+                    interactWithEntity(entity)
+                    -- Kembali ke base
+                    teleportToBase()
+                    -- Tunggu 1 detik sebelum loop berikutnya
+                    wait(1)
+                else
+                    -- Ada pemain, tunggu sebentar
+                    wait(1)
+                end
             else
-                -- Ada pemain, coba cari entity lain dengan rarity yang sama atau prioritas berikutnya?
-                -- Untuk sederhana, kita tunggu sebentar
                 wait(1)
             end
         else
@@ -614,7 +665,6 @@ local function collectMoneyLoop()
         -- Tentukan plot base berdasarkan posisi player saat ini
         local currentPos = rootPart.Position
         local plotBase = nil
-        -- Koordinat FloorSpawn setiap plot (berdasarkan data)
         local floorSpawnCoords = {
             Vector3.new(123.879, 56, -117.25),
             Vector3.new(123.879, 56, -57.25),
@@ -623,39 +673,33 @@ local function collectMoneyLoop()
             Vector3.new(123.879, 56, 122.75)
         }
         for i, coord in ipairs(floorSpawnCoords) do
-            if (currentPos - coord).Magnitude < 5 then -- toleransi
+            if (currentPos - coord).Magnitude < 5 then
                 plotBase = i
                 break
             end
         end
 
         if not plotBase then
-            -- Jika tidak berada di base, mungkin perlu teleport ke base? Tapi tidak diinstruksikan.
-            -- Kita asumsikan kita harus berada di base untuk mengumpulkan uang.
             wait(1)
             continue
         end
 
-        -- Akses semua plot
         local plots = workspace:FindFirstChild("Plots")
         if not plots then
             wait(1)
             continue
         end
 
-        -- Loop semua plot (1-5)
         for plotIndex = 1, 5 do
             local plot = plots:FindFirstChild(tostring(plotIndex))
             if plot then
                 local floors = plot:FindFirstChild("Floors")
                 if floors then
-                    -- Loop semua floor (0-4)
                     for floorIndex = 0, 4 do
                         local floor = floors:FindFirstChild("Floor"..floorIndex)
                         if floor then
                             local stands = floor:FindFirstChild("Stands")
                             if stands then
-                                -- Loop semua stand (1-10)
                                 for standIndex = 1, 10 do
                                     local stand = stands:FindFirstChild(tostring(standIndex))
                                     if stand then
@@ -665,12 +709,12 @@ local function collectMoneyLoop()
                                             if touchPart then
                                                 local touchInterest = touchPart:FindFirstChild("TouchInterest")
                                                 if touchInterest then
-                                                    -- Jika TouchInterest adalah RemoteEvent, fire
                                                     if touchInterest:IsA("RemoteEvent") then
                                                         touchInterest:FireServer()
                                                     elseif touchInterest:IsA("TouchTransmitter") then
-                                                        -- Alternatif: simulasi touched dengan memindahkan part? Sulit.
-                                                        -- Kita bisa coba memanggil method :Touch() jika ada
+                                                        -- Simulasi touched dengan memindahkan part sedikit? Atau fire event?
+                                                        -- Kita bisa coba panggil method :Touch() jika ada, tapi tidak.
+                                                        -- Alternatif: fire event yang mungkin terkait.
                                                     end
                                                 end
                                             end
@@ -683,7 +727,7 @@ local function collectMoneyLoop()
                 end
             end
         end
-        wait(1) -- tunggu sebelum loop lagi
+        wait(1)
     end
 end
 
@@ -696,7 +740,6 @@ local function upgradeAllLoop()
             continue
         end
 
-        -- Tentukan plot base (sama seperti collect money)
         local currentPos = rootPart.Position
         local plotBase = nil
         local floorSpawnCoords = {
@@ -835,7 +878,7 @@ UI.AddSwitch({
 })
 
 UI.AddSwitch({
-    Text = "Auto Admin", -- Tidak ada logika, mungkin placeholder
+    Text = "Auto Admin",
     Default = false,
     Callback = function(state)
         -- Tidak ada implementasi
@@ -843,7 +886,7 @@ UI.AddSwitch({
 })
 
 UI.AddSwitch({
-    Text = "Auto Exclusive", -- Placeholder
+    Text = "Auto Exclusive",
     Default = false,
     Callback = function(state)
     end
@@ -885,13 +928,8 @@ UI.AddSwitch({
 -- 10. MEMULAI LOOP UNTUK AUTO FITUR
 -- ==================================================
 
--- Jalankan loop auto rarity di coroutine terpisah
 coroutine.wrap(autoRarityLoop)()
-
--- Jalankan loop collect money
 coroutine.wrap(collectMoneyLoop)()
-
--- Jalankan loop upgrade all
 coroutine.wrap(upgradeAllLoop)()
 
 -- ==================================================
