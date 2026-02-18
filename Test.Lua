@@ -704,7 +704,7 @@ local function getPlacesData()
     if not places then return nil end
 
     local touchParts = {}
-    local upgradeButtons = {}  -- menyimpan ImageButton Upgrade
+    local upgradeButtons = {}  -- menyimpan GuiButton Upgrade (ImageButton atau TextButton)
 
     for i = 1, 30 do
         local model = places:FindFirstChild(tostring(i))
@@ -720,11 +720,11 @@ local function getPlacesData()
             -- Upgrade button
             local upgradePart = model:FindFirstChild("Upgrade")
             if upgradePart then
-                -- Cari SurfaceGui lalu ImageButton "Upgrade"
+                -- Cari SurfaceGui lalu cari GuiButton bernama "Upgrade" (ImageButton atau TextButton)
                 local surfaceGui = upgradePart:FindFirstChildWhichIsA("SurfaceGui")
                 if surfaceGui then
                     local upgradeButton = surfaceGui:FindFirstChild("Upgrade")
-                    if upgradeButton and upgradeButton:IsA("ImageButton") then
+                    if upgradeButton and upgradeButton:IsA("GuiButton") then
                         table.insert(upgradeButtons, upgradeButton)
                     end
                 end
@@ -756,14 +756,18 @@ local function fireAllTouchInterests()
     end
 end
 
--- Fungsi untuk mengklik semua Upgrade buttons (PERBAIKAN)
+-- Fungsi untuk mengklik semua Upgrade buttons (perbaikan: gunakan event MouseButton1Click)
 local function clickAllUpgrades()
     local data = getPlacesData()
     if not data then return end
 
     for _, button in ipairs(data.upgradeButtons) do
         -- Simulasi klik dengan memicu event MouseButton1Click
-        button.MouseButton1Click:Fire()
+        -- Pastikan event ada (seharusnya selalu ada untuk GuiButton)
+        local event = button.MouseButton1Click
+        if event then
+            event:Fire()
+        end
         task.wait()
     end
 end
