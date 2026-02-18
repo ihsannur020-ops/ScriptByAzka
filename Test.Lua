@@ -31,7 +31,7 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 -- Frame utama (dapat digeser)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 350, 0, 350)  -- diperbesar sedikit untuk menampung switch baru
+mainFrame.Size = UDim2.new(0, 350, 0, 350)
 mainFrame.Position = UDim2.new(0.5, -175, 0.5, -175)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BackgroundTransparency = 0.1
@@ -456,16 +456,11 @@ end
 
 -- Fungsi teleport ke plot player saat ini
 local function teleportToHome()
-    local plot = getPlotNumber()
-    if plot then
-        teleportToPlot(plot)
-    else
-        warn("Tidak dapat menemukan plot player")
-    end
+    teleport(homePoint)
 end
 
--- Variabel untuk durasi hold proximity (default 2 detik, bisa 0 jika instant)
-local proximityHoldDuration = 2 -- detik
+-- Variabel untuk durasi hold proximity (default 6 detik, bisa 0 jika instant)
+local proximityHoldDuration = 6 -- detik
 local instantProximityEnabled = false
 
 -- Fungsi interaksi dengan brainrot (dengan durasi hold)
@@ -480,9 +475,9 @@ local function interactWithBrainrot(brainrotModel, holdDuration)
             task.wait(holdDuration)
             prompt:InputHoldEnd()
         else
-            -- Instant: langsung trigger? Beberapa prompt merespons HoldBegin lalu HoldEnd cepat
+            -- Instant: langsung trigger
             prompt:InputHoldBegin()
-            task.wait(0.1) -- sedikit jeda untuk memastikan
+            task.wait(0.1)
             prompt:InputHoldEnd()
         end
         return true
@@ -493,20 +488,6 @@ local function interactWithBrainrot(brainrotModel, holdDuration)
             fireclickdetector(clickDetector)
             return true
         end
-    end
-    return false
-end
-
--- Fungsi menunggu atribut CarryingBrainrot
-local function waitForCarrying(timeout)
-    local playerModel = getPlayerModel()
-    if not playerModel then return false end
-    local start = tick()
-    while tick() - start < timeout do
-        if playerModel:GetAttribute("CarryingBrainrot") == true then
-            return true
-        end
-        task.wait(0.1)
     end
     return false
 end
@@ -554,21 +535,14 @@ local function processRebirthNeed()
     teleport(targetModel:GetPivot().Position + Vector3.new(0, 3, 0))
     task.wait(0.5)
 
-    -- Interaksi dengan durasi default (2 detik atau sesuai instant)
+    -- Interaksi dengan durasi default (6 detik atau sesuai instant)
     interactWithBrainrot(targetModel)
 
-    -- Tunggu carrying
-    local success = waitForCarrying(6)
-    if not success then
-        teleport(homePoint)
-        task.wait(0.5)
-        local plot = getPlotNumber()
-        if plot then
-            teleportToPlot(plot)
-        else
-            warn("Tidak bisa mendapatkan plot")
-        end
-    end
+    -- Tunggu 6 detik (tanpa mengecek atribut)
+    task.wait(6)
+
+    -- Teleport ke home point
+    teleportToHome()
 end
 
 -- ==================================================
@@ -604,17 +578,12 @@ local function autoCollect(typeName)
 
     interactWithBrainrot(targetModel)
 
-    local success = waitForCarrying(6)
-    if not success then
-        teleport(homePoint)
-        task.wait(0.5)
-        local plot = getPlotNumber()
-        if plot then
-            teleportToPlot(plot)
-        else
-            warn("Tidak bisa mendapatkan plot")
-        end
-    end
+    -- Tunggu 6 detik
+    task.wait(6)
+
+    -- Teleport ke home point
+    teleportToHome()
+
     return true
 end
 
@@ -847,7 +816,7 @@ createCheckbox({
     Default = false,
     Callback = function(state)
         instantProximityEnabled = state
-        proximityHoldDuration = state and 0 or 2
+        proximityHoldDuration = state and 0 or 6
         print("Instant Proximity:", state)
     end
 })
