@@ -62,7 +62,7 @@ minimizeBtn.Position = UDim2.new(1, -65, 0, 5)
 minimizeBtn.BackgroundTransparency = 1
 minimizeBtn.Text = "-"
 minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-minimizeBtn.TextSize = 20
+minimizeBtn.TextSize = 28 -- diperbesar
 minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = mainFrame
@@ -129,9 +129,10 @@ function UI.AddSlider(config)
     local default = config.Default or (min + max) / 2
     local callback = config.Callback or function() end
 
+    -- Frame dengan margin kiri 5 dan kanan 5 agar lebih rapi
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -20, 0, 30)
-    frame.Position = UDim2.new(0, 10, 0, 0)
+    frame.Size = UDim2.new(1, -10, 0, 30)  -- kurangi 10 pixel total (5 kiri, 5 kanan)
+    frame.Position = UDim2.new(0, 5, 0, 0) -- geser 5 ke kanan
     frame.BackgroundTransparency = 1
     frame.Parent = container
 
@@ -325,7 +326,7 @@ miniLabel.Size = UDim2.new(1, 0, 1, 0)
 miniLabel.BackgroundTransparency = 1
 miniLabel.Text = "+"
 miniLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-miniLabel.TextSize = 24
+miniLabel.TextSize = 32 -- diperbesar
 miniLabel.Font = Enum.Font.GothamBold
 miniLabel.Parent = minimizedFrame
 
@@ -492,12 +493,19 @@ end
 local function isPlayerNearby(model, radius)
     radius = radius or 3
     if not model then return false end
-    local modelPos = model:GetPivot().Position
+    -- Dapatkan posisi model (gunakan PrimaryPart jika ada, atau Pivot)
+    local modelPos
+    if model:IsA("Model") and model.PrimaryPart then
+        modelPos = model.PrimaryPart.Position
+    else
+        modelPos = model:GetPivot().Position
+    end
+
     for _, player in ipairs(players:GetPlayers()) do
         if player ~= localPlayer then
-            local char = player.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                local dist = (char.HumanoidRootPart.Position - modelPos).Magnitude
+            local character = player.Character
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                local dist = (character.HumanoidRootPart.Position - modelPos).Magnitude
                 if dist <= radius then
                     return true
                 end
@@ -793,7 +801,7 @@ end
 -- 9. MENAMBAH ELEMEN UI
 -- ==================================================
 
--- Slider Walkspeed
+-- Slider Walkspeed (dengan margin 5)
 UI.AddSlider({
     Text = "Walkspeed",
     Min = 16,
