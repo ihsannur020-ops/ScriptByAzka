@@ -1,393 +1,852 @@
--- Remote Console untuk Delta Executor (Versi Fix)
--- Menampilkan data yang dikirim dan diterima oleh RemoteFunction
--- DENGAN PERBAIKAN: Tidak menambahkan properti ke instance Roblox (menghindari error "invalid member")
+local coreGui = game:GetService("CoreGui")
+local players = game:GetService("Players")
+local userInput = game:GetService("UserInputService")
+local tweenService = game:GetService("TweenService")
+local runService = game:GetService("RunService")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local virtualUser = game:GetService("VirtualUser")
 
--- Gunakan pcall untuk menangkap error di seluruh skrip
-local success, err = pcall(function()
+local localPlayer = players.LocalPlayer
+local guiName = "SurviveLAVA_ByAzka"
 
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local player = Players.LocalPlayer
-
-if not player then
-    warn("Tidak dapat menemukan pemain lokal.")
-    return
+if coreGui:FindFirstChild(guiName) then
+    coreGui:FindFirstChild(guiName):Destroy()
 end
 
--- ================== KONFIGURASI ==================
-local REMOTE_NAMES = {"Speed", "Rebirth", "Carry", "Brainrots", "SellDialogue", "Upgrade"}
-local MAX_LOG_COUNT = 100
-local EVENTS_FOLDER_PATH = "Events"
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = guiName
+screenGui.Parent = coreGui
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- ================== FUNGSI SERIALIZE ==================
-local function serialize(val, depth)
-    depth = depth or 0
-    if depth > 3 then return "{...}" end
-
-    local t = type(val)
-    if t == "string" then
-        return string.format("%q", val)
-    elseif t == "number" or t == "boolean" then
-        return tostring(val)
-    elseif t == "nil" then
-        return "nil"
-    elseif t == "table" then
-        local parts = {}
-        for k, v in pairs(val) do
-            local ks = serialize(k, depth + 1)
-            local vs = serialize(v, depth + 1)
-            table.insert(parts, string.format("[%s] = %s", ks, vs))
-        end
-        return "{" .. table.concat(parts, ", ") .. "}"
-    elseif t == "userdata" then
-        local success, className = pcall(function() return val.ClassName end)
-        if success and className then
-            local name = pcall(function() return val.Name end) and val.Name or "?"
-            return string.format("Instance[%s: '%s']", className, name)
-        else
-            return tostring(val)
-        end
-    else
-        return tostring(val)
-    end
-end
-
--- ================== MEMBUAT UI CONSOLE ==================
-local gui = Instance.new("ScreenGui")
-gui.Name = "RemoteConsole"
-gui.ResetOnSpawn = false
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
--- Tempatkan di CoreGui jika memungkinkan, fallback ke PlayerGui
-local parentGui = CoreGui
-local setParentSuccess = pcall(function() gui.Parent = parentGui end)
-if not setParentSuccess or not gui.Parent then
-    gui.Parent = player:WaitForChild("PlayerGui")
-end
-
--- Frame utama (dapat digeser)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 700, 0, 450)
-mainFrame.Position = UDim2.new(0.5, -350, 0.5, -225)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.Size = UDim2.new(0, 350, 0, 450)
+mainFrame.Position = UDim2.new(0.5, -175, 0.5, -225)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 2
-mainFrame.BorderColor3 = Color3.fromRGB(200, 200, 200)
+mainFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
 mainFrame.Active = true
 mainFrame.Draggable = true
-mainFrame.Parent = gui
+mainFrame.Parent = screenGui
 
--- Judul UI
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 8)
+uiCorner.Parent = mainFrame
+
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -10, 0, 30)
+title.Size = UDim2.new(1, -70, 0, 30)
 title.Position = UDim2.new(0, 5, 0, 5)
 title.BackgroundTransparency = 1
-title.Text = "Remote Console (Delta Fix)"
+title.Text = "Survive LAVA For Brainrot"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 20
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = mainFrame
 
--- Tombol tutup
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -65, 0, 5)
+minimizeBtn.BackgroundTransparency = 1
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeBtn.TextSize = 20
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.BorderSizePixel = 0
+minimizeBtn.Parent = mainFrame
+
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 25, 0, 25)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -30, 0, 5)
-closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.Font = Enum.Font.SourceSansBold
-closeBtn.TextSize = 18
+closeBtn.TextSize = 20
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.BorderSizePixel = 0
 closeBtn.Parent = mainFrame
+
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, -20, 1, -55)
+scrollingFrame.Position = UDim2.new(0, 10, 0, 45)
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.BorderSizePixel = 0
+scrollingFrame.ScrollBarThickness = 4
+scrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollingFrame.Parent = mainFrame
+scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local scrollLayout = Instance.new("UIListLayout")
+scrollLayout.Parent = scrollingFrame
+scrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+scrollLayout.Padding = UDim.new(0, 10)
+
+local function createContainer(name)
+    local container = Instance.new("Frame")
+    container.Name = name
+    container.Size = UDim2.new(1, 0, 0, 0)
+    container.BackgroundTransparency = 1
+    container.Parent = scrollingFrame
+    container.AutomaticSize = Enum.AutomaticSize.Y
+
+    local layout = Instance.new("UIListLayout")
+    layout.Parent = container
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 6)
+
+    return container
+end
+
+local slideContainer = createContainer("SlideContainer")
+local buttonContainer = createContainer("ButtonContainer")
+local switchContainer = createContainer("SwitchContainer")
+
+local UI = {}
+
+function UI.AddSlider(config)
+    local container = slideContainer
+    local text = config.Text or "Slider"
+    local min = config.Min or 0
+    local max = config.Max or 100
+    local default = config.Default or (min + max) / 2
+    local callback = config.Callback or function() end
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 30)
+    frame.Position = UDim2.new(0, 10, 0, 0)
+    frame.BackgroundTransparency = 1
+    frame.Parent = container
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -60, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0, 50, 1, 0)
+    valueLabel.Position = UDim2.new(1, -50, 0, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Text = tostring(default)
+    valueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    valueLabel.Font = Enum.Font.Gotham
+    valueLabel.TextSize = 14
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = frame
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(1, 0, 0, 4)
+    track.Position = UDim2.new(0, 0, 1, -8)
+    track.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    track.BorderSizePixel = 0
+    track.Parent = frame
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+    fill.BorderSizePixel = 0
+    fill.Parent = track
+
+    local thumb = Instance.new("TextButton")
+    thumb.Size = UDim2.new(0, 12, 0, 12)
+    thumb.Position = UDim2.new((default - min) / (max - min), -6, 0, -4)
+    thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    thumb.Text = ""
+    thumb.BorderSizePixel = 0
+    thumb.Parent = track
+
+    local thumbCorner = Instance.new("UICorner")
+    thumbCorner.CornerRadius = UDim.new(0, 6)
+    thumbCorner.Parent = thumb
+    local trackCorner = Instance.new("UICorner")
+    trackCorner.CornerRadius = UDim.new(0, 2)
+    trackCorner.Parent = track
+
+    local dragging = false
+    thumb.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+
+    userInput.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    userInput.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mousePos = userInput:GetMouseLocation()
+            local trackAbsPos, trackSize = track.AbsolutePosition, track.AbsoluteSize
+            local relativeX = math.clamp(mousePos.X - trackAbsPos.X, 0, trackSize.X)
+            local percent = relativeX / trackSize.X
+            local value = min + (max - min) * percent
+            value = math.floor(value + 0.5)
+            valueLabel.Text = tostring(value)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            thumb.Position = UDim2.new(percent, -6, 0, -4)
+            callback(value)
+        end
+    end)
+
+    return frame
+end
+
+function UI.AddButton(config)
+    local container = buttonContainer
+    local text = config.Text or "Button"
+    local callback = config.Callback or function() end
+
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 0, 30)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 14
+    button.BorderSizePixel = 0
+    button.Parent = container
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Parent = button
+
+    button.MouseButton1Click:Connect(callback)
+
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end)
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+
+    return button
+end
+
+local function createCheckbox(config)
+    local container = switchContainer
+    local text = config.Text or "Checkbox"
+    local default = config.Default or false
+    local callback = config.Callback or function() end
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 30)
+    frame.BackgroundTransparency = 1
+    frame.Parent = container
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -60, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    local checkBtn = Instance.new("TextButton")
+    checkBtn.Size = UDim2.new(0, 24, 0, 24)
+    checkBtn.Position = UDim2.new(1, -30, 0.5, -12)
+    checkBtn.BackgroundColor3 = default and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(60, 60, 60)
+    checkBtn.Text = ""
+    checkBtn.BorderSizePixel = 0
+    checkBtn.Parent = frame
+
+    local checkCorner = Instance.new("UICorner")
+    checkCorner.CornerRadius = UDim.new(0, 4)
+    checkCorner.Parent = checkBtn
+
+    local checkMark = Instance.new("TextLabel")
+    checkMark.Size = UDim2.new(1, 0, 1, 0)
+    checkMark.BackgroundTransparency = 1
+    checkMark.Text = default and "✓" or ""
+    checkMark.TextColor3 = Color3.fromRGB(255, 255, 255)
+    checkMark.TextSize = 18
+    checkMark.Font = Enum.Font.GothamBold
+    checkMark.Parent = checkBtn
+
+    local state = default
+
+    local function updateCheck()
+        checkBtn.BackgroundColor3 = state and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(60, 60, 60)
+        checkMark.Text = state and "✓" or ""
+    end
+
+    checkBtn.MouseButton1Click:Connect(function()
+        state = not state
+        updateCheck()
+        callback(state)
+    end)
+
+    return frame
+end
+
+local minimizedFrame = Instance.new("Frame")
+minimizedFrame.Size = UDim2.new(0, 50, 0, 50)
+minimizedFrame.Position = UDim2.new(1, -70, 1, -70)
+minimizedFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+minimizedFrame.BorderSizePixel = 1
+minimizedFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
+minimizedFrame.Active = true
+minimizedFrame.Visible = false
+minimizedFrame.Parent = screenGui
+
+local miniCorner = Instance.new("UICorner")
+miniCorner.CornerRadius = UDim.new(0, 10)
+miniCorner.Parent = minimizedFrame
+
+local miniLabel = Instance.new("TextLabel")
+miniLabel.Size = UDim2.new(1, 0, 1, 0)
+miniLabel.BackgroundTransparency = 1
+miniLabel.Text = "+"
+miniLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+miniLabel.TextSize = 24
+miniLabel.Font = Enum.Font.GothamBold
+miniLabel.Parent = minimizedFrame
+
+local miniButton = Instance.new("TextButton")
+miniButton.Size = UDim2.new(1, 0, 1, 0)
+miniButton.BackgroundTransparency = 1
+miniButton.Text = ""
+miniButton.Parent = minimizedFrame
+
+local dragging = false
+local dragStartPos
+local frameStartPos
+local isDragging = false
+local dragThreshold = 5
+
+miniButton.MouseButton1Down:Connect(function()
+    dragging = true
+    dragStartPos = userInput:GetMouseLocation()
+    frameStartPos = minimizedFrame.Position
+    isDragging = false
+end)
+
+userInput.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local currentPos = userInput:GetMouseLocation()
+        local delta = currentPos - dragStartPos
+        if not isDragging and (delta.X^2 + delta.Y^2) > dragThreshold^2 then
+            isDragging = true
+        end
+        if isDragging then
+            minimizedFrame.Position = UDim2.new(
+                frameStartPos.X.Scale,
+                frameStartPos.X.Offset + delta.X,
+                frameStartPos.Y.Scale,
+                frameStartPos.Y.Offset + delta.Y
+            )
+        end
+    end
+end)
+
+userInput.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and dragging then
+        if not isDragging then
+            minimizedFrame.Visible = false
+            mainFrame.Visible = true
+        end
+        dragging = false
+    end
+end)
+
+minimizeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    minimizedFrame.Visible = true
+end)
+
 closeBtn.MouseButton1Click:Connect(function()
-    gui:Destroy()
+    screenGui:Destroy()
 end)
 
--- Panel kiri (daftar remote)
-local leftPanel = Instance.new("Frame")
-leftPanel.Size = UDim2.new(0, 150, 1, -40)
-leftPanel.Position = UDim2.new(0, 5, 0, 35)
-leftPanel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-leftPanel.BackgroundTransparency = 0.2
-leftPanel.BorderSizePixel = 1
-leftPanel.BorderColor3 = Color3.fromRGB(100, 100, 100)
-leftPanel.Parent = mainFrame
+local rebirthData = {
+    [1] = "BonecaAmbalabu",
+    [2] = "CactoHipopotamo",
+    [3] = "BallerinaCappuccina",
+    [4] = "CocofantoElefanto",
+    [5] = "Garama",
+    [6] = "UdinDinDinDun",
+    [7] = "LaVaccaSaturnoSatunita",
+    [8] = "LasVaquitasSaturnitas",
+    [9] = "GorilloWatermelondrillo",
+    [10] = "CompactaroniDiskaloni",
+    [11] = "ChillinChilli",
+    [12] = "CrazylonePizaione",
+}
 
-local leftTitle = Instance.new("TextLabel")
-leftTitle.Size = UDim2.new(1, 0, 0, 25)
-leftTitle.BackgroundTransparency = 1
-leftTitle.Text = "Remote List"
-leftTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-leftTitle.Font = Enum.Font.SourceSansBold
-leftTitle.TextSize = 16
-leftTitle.Parent = leftPanel
+local plotPositions = {
+    [1] = Vector3.new(100.205, 7, 83.222),
+    [2] = Vector3.new(50.205, 7, 83.221),
+    [3] = Vector3.new(0.205, 7, 83.221),
+    [4] = Vector3.new(-49.795, 7, 83.221),
+    [5] = Vector3.new(-99.795, 7, 83.221)
+}
 
-local remoteList = Instance.new("ScrollingFrame")
-remoteList.Size = UDim2.new(1, -10, 1, -30)
-remoteList.Position = UDim2.new(0, 5, 0, 25)
-remoteList.BackgroundTransparency = 1
-remoteList.ScrollBarThickness = 8
-remoteList.CanvasSize = UDim2.new(0, 0, 0, 0)
-remoteList.Parent = leftPanel
+local afterInteractPoint = Vector3.new(-127.503, 5, -1.24)
 
-local listLayout = Instance.new("UIListLayout")
-listLayout.Padding = UDim.new(0, 5)
-listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Parent = remoteList
+local currentPlotNumber = nil
 
-local function updateRemoteListCanvas()
-    remoteList.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
+local function getPlotNumber()
+    if currentPlotNumber then return currentPlotNumber end
+    local plotAttr = localPlayer:GetAttribute("Plot")
+    if plotAttr then
+        local num = tonumber(plotAttr:match("%d+"))
+        if num and num >= 1 and num <= 5 then
+            currentPlotNumber = num
+            return num
+        end
+    end
+    return nil
 end
-listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateRemoteListCanvas)
 
--- Panel kanan (log console)
-local rightPanel = Instance.new("Frame")
-rightPanel.Size = UDim2.new(1, -165, 1, -40)
-rightPanel.Position = UDim2.new(0, 160, 0, 35)
-rightPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-rightPanel.BackgroundTransparency = 0.2
-rightPanel.BorderSizePixel = 1
-rightPanel.BorderColor3 = Color3.fromRGB(100, 100, 100)
-rightPanel.Parent = mainFrame
-
-local logScroller = Instance.new("ScrollingFrame")
-logScroller.Size = UDim2.new(1, -10, 1, -10)
-logScroller.Position = UDim2.new(0, 5, 0, 5)
-logScroller.BackgroundTransparency = 1
-logScroller.ScrollBarThickness = 8
-logScroller.CanvasSize = UDim2.new(0, 0, 0, 0)
-logScroller.Parent = rightPanel
-
-local logLayout = Instance.new("UIListLayout")
-logLayout.Padding = UDim.new(0, 3)
-logLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-logLayout.SortOrder = Enum.SortOrder.LayoutOrder
-logLayout.Parent = logScroller
-
-local function updateLogCanvas()
-    logScroller.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 10)
+local function getPlayerModel()
+    return workspace:FindFirstChild(localPlayer.Name)
 end
-logLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateLogCanvas)
 
--- ================== DATA LOG DAN FILTER ==================
-local logs = {}
-local filterRemote = nil  -- nil = semua, string = nama remote
+local function teleport(position)
+    local character = localPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = CFrame.new(position)
+    end
+end
 
-local function addLog(remoteName, argsStr, resultStr, isError, timeStr)
-    local logEntry = {
-        name = remoteName,
-        time = timeStr,
-        args = argsStr,
-        result = resultStr,
-        isError = isError
+local function teleportToPlot(plotNumber)
+    if plotNumber and plotPositions[plotNumber] then
+        teleport(plotPositions[plotNumber])
+    end
+end
+
+local function teleportToHome()
+    local plot = getPlotNumber()
+    if plot then
+        teleportToPlot(plot)
+    end
+end
+
+local function interactWithBrainrot(brainrotModel)
+    if not brainrotModel then return false end
+    local holdDuration = 1.7
+    local prompt = brainrotModel:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if prompt then
+        prompt:InputHoldBegin()
+        task.wait(holdDuration)
+        prompt:InputHoldEnd()
+        return true
+    else
+        local clickDetector = brainrotModel:FindFirstChildWhichIsA("ClickDetector", true)
+        if clickDetector then
+            fireclickdetector(clickDetector)
+            return true
+        end
+    end
+    return false
+end
+
+local function isPlayerNearby(model, radius)
+    radius = radius or 3
+    if not model then return false end
+    local modelPos = model:GetPivot().Position
+    
+    for _, player in ipairs(players:GetPlayers()) do
+        if player ~= localPlayer then
+            local character = player.Character
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                local distance = (character.HumanoidRootPart.Position - modelPos).Magnitude
+                if distance <= radius then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+local function findAvailableModel(models)
+    if #models == 0 then return nil end
+    local shuffled = {}
+    for i, v in ipairs(models) do shuffled[i] = v end
+    for i = #shuffled, 2, -1 do
+        local j = math.random(i)
+        shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+    end
+    for _, model in ipairs(shuffled) do
+        if not isPlayerNearby(model) then
+            return model
+        end
+    end
+    return nil
+end
+
+local function findModelsByName(name)
+    local brainrotsFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Brainrots")
+    if not brainrotsFolder then return {} end
+    local models = {}
+    for _, folder in ipairs(brainrotsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            local model = folder:FindFirstChild(name)
+            if model then
+                table.insert(models, model)
+            end
+        end
+    end
+    return models
+end
+
+local function findModelsInFolder(folderName)
+    local brainrotsFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Brainrots")
+    if not brainrotsFolder then return {} end
+    local targetFolder = brainrotsFolder:FindFirstChild(folderName)
+    if not targetFolder then return {} end
+    local models = {}
+    for _, child in ipairs(targetFolder:GetChildren()) do
+        if child:IsA("Model") then
+            table.insert(models, child)
+        end
+    end
+    return models
+end
+
+local function processRebirthNeed()
+    local rebirths = localPlayer.leaderstats and localPlayer.leaderstats:FindFirstChild("Rebirths")
+    if not rebirths then
+        return
+    end
+    local value = tonumber(rebirths.Value)
+    if not value then
+        return
+    end
+    local index = value + 1
+    if index > 12 then
+        return
+    end
+    local brainrotName = rebirthData[index]
+    if not brainrotName then
+        return
+    end
+
+    local models = findModelsByName(brainrotName)
+    if #models == 0 then
+        return
+    end
+
+    local targetModel = findAvailableModel(models)
+    if not targetModel then
+        return
+    end
+
+    teleport(targetModel:GetPivot().Position + Vector3.new(0, 3, 0))
+    task.wait(0.5)
+
+    interactWithBrainrot(targetModel)
+
+    task.wait(1.7)
+
+    teleport(afterInteractPoint)
+    task.wait(0.5)
+
+    local plot = getPlotNumber()
+    if plot then
+        teleportToPlot(plot)
+    else
+        teleport(plotPositions[1])
+    end
+end
+
+local autoStates = {
+    Godly = false,
+    Celestial = false,
+    Secret = false
+}
+
+local function autoCollect(typeName)
+    local models = findModelsInFolder(typeName)
+    if #models == 0 then return false end
+
+    local targetModel = findAvailableModel(models)
+    if not targetModel then
+        return false
+    end
+
+    teleport(targetModel:GetPivot().Position + Vector3.new(0, 3, 0))
+    task.wait(0.5)
+
+    interactWithBrainrot(targetModel)
+
+    task.wait(1.7)
+
+    teleport(afterInteractPoint)
+    task.wait(0.5)
+
+    local plot = getPlotNumber()
+    if plot then
+        teleportToPlot(plot)
+    else
+        teleport(plotPositions[1])
+    end
+
+    return true
+end
+
+local function startAutoLoop()
+    while true do
+        local order = {}
+        if autoStates.Godly then table.insert(order, "Godly") end
+        if autoStates.Celestial then table.insert(order, "Celestial") end
+        if autoStates.Secret then table.insert(order, "Secret") end
+
+        if #order > 0 then
+            for _, typeName in ipairs(order) do
+                if autoStates[typeName] then
+                    local success = autoCollect(typeName)
+                    if success then
+                        task.wait(1)
+                    end
+                end
+            end
+        end
+        task.wait(1)
+    end
+end
+
+local collectCashEnabled = false
+local upgradeAllEnabled = false
+local instantProximityEnabled = false
+local afkEnabled = false
+
+local placesCache = nil
+
+local function getPlacesData()
+    if placesCache then return placesCache end
+    local plotNum = getPlotNumber()
+    if not plotNum then return nil end
+
+    local plotsFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Plots")
+    if not plotsFolder then return nil end
+
+    local plotFolder = plotsFolder:FindFirstChild(tostring(plotNum))
+    if not plotFolder then return nil end
+
+    local places = plotFolder:FindFirstChild("Places")
+    if not places then return nil end
+
+    local touchParts = {}
+    local upgradeButtons = {}
+
+    for i = 1, 30 do
+        local model = places:FindFirstChild(tostring(i))
+        if model then
+            local claim = model:FindFirstChild("Claim")
+            if claim then
+                local touchInterest = claim:FindFirstChildWhichIsA("TouchTransmitter")
+                if touchInterest then
+                    table.insert(touchParts, claim)
+                end
+            end
+            local upgradePart = model:FindFirstChild("Upgrade")
+            if upgradePart then
+                local surfaceGui = upgradePart:FindFirstChildWhichIsA("SurfaceGui")
+                if surfaceGui then
+                    local upgradeButton = surfaceGui:FindFirstChild("Upgrade")
+                    if upgradeButton and upgradeButton:IsA("GuiButton") then
+                        table.insert(upgradeButtons, upgradeButton)
+                    end
+                end
+            end
+        end
+    end
+
+    placesCache = {
+        touchParts = touchParts,
+        upgradeButtons = upgradeButtons
     }
-    table.insert(logs, logEntry)
-    if #logs > MAX_LOG_COUNT then
-        table.remove(logs, 1)
-    end
-    refreshDisplay()
+    return placesCache
 end
 
-function refreshDisplay()
-    for _, child in ipairs(logScroller:GetChildren()) do
-        if child:IsA("TextLabel") then
-            child:Destroy()
-        end
-    end
+local function fireAllTouchInterests()
+    local data = getPlacesData()
+    if not data then return end
 
-    for _, log in ipairs(logs) do
-        if filterRemote == nil or log.name == filterRemote then
-            local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -10, 0, 0)
-            label.BackgroundColor3 = log.isError and Color3.fromRGB(80, 30, 30) or Color3.fromRGB(40, 40, 40)
-            label.BackgroundTransparency = 0.3
-            label.BorderSizePixel = 1
-            label.BorderColor3 = Color3.fromRGB(80, 80, 80)
-            label.Text = string.format("[%s] [%s] Args: %s | Return: %s", log.time, log.name, log.args, log.result)
-            label.TextColor3 = log.isError and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(220, 220, 220)
-            label.Font = Enum.Font.SourceSans
-            label.TextSize = 14
-            label.TextWrapped = true
-            label.RichText = false
-            label.AutomaticSize = Enum.AutomaticSize.Y
-            label.Parent = logScroller
-        end
+    local character = localPlayer.Character
+    if not character then return end
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+
+    for _, part in ipairs(data.touchParts) do
+        firetouchinterest(rootPart, part, 0)
+        firetouchinterest(rootPart, part, 1)
+        task.wait()
     end
-    updateLogCanvas()
 end
 
--- ================== MEMBUAT TOMBOL REMOTE ==================
-local buttons = {}
+local function clickAllUpgrades()
+    local data = getPlacesData()
+    if not data then return end
 
-local function createRemoteButton(name)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 30)
-    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.SourceSans
-    btn.TextSize = 16
-    btn.Parent = remoteList
-
-    btn.MouseEnter:Connect(function()
-        if filterRemote ~= name then
-            btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        end
-    end)
-    btn.MouseLeave:Connect(function()
-        if filterRemote == name then
-            btn.BackgroundColor3 = Color3.fromRGB(100, 150, 200)
-        else
-            btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        end
-    end)
-
-    btn.MouseButton1Click:Connect(function()
-        if filterRemote == name then
-            filterRemote = nil
-            for _, b in pairs(buttons) do
-                b.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            end
-            allBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
-        else
-            filterRemote = name
-            for _, b in pairs(buttons) do
-                b.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            end
-            btn.BackgroundColor3 = Color3.fromRGB(100, 150, 200)
-            allBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        end
-        refreshDisplay()
-    end)
-
-    buttons[name] = btn
-end
-
--- Tombol "Semua"
-local allBtn = Instance.new("TextButton")
-allBtn.Size = UDim2.new(1, -10, 0, 30)
-allBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
-allBtn.Text = "Semua"
-allBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-allBtn.Font = Enum.Font.SourceSansBold
-allBtn.TextSize = 16
-allBtn.Parent = remoteList
-allBtn.MouseButton1Click:Connect(function()
-    filterRemote = nil
-    for _, b in pairs(buttons) do
-        b.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    end
-    allBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
-    refreshDisplay()
-end)
-
-for _, name in ipairs(REMOTE_NAMES) do
-    createRemoteButton(name)
-end
-
--- ================== HOOK REMOTEFUNCTION DENGAN AMAN ==================
--- Tabel untuk melacak remote yang sudah di-hook (tanpa properti di instance)
-local hookedRemotes = {}
-
-local eventsFolder = ReplicatedStorage:FindFirstChild(EVENTS_FOLDER_PATH)
-if not eventsFolder then
-    addLog("SYSTEM", "", "Folder Events tidak ditemukan! Pastikan path benar.", true, os.date("%H:%M:%S"))
-else
-    for _, name in ipairs(REMOTE_NAMES) do
-        local remote = eventsFolder:FindFirstChild(name)
-        if remote and remote:IsA("RemoteFunction") then
-            -- Cek apakah sudah di-hook menggunakan tabel
-            if hookedRemotes[remote] then
-                continue
-            end
-
-            -- Simpan fungsi asli
-            local oldInvoke = remote.Invoke
-
-            -- Ganti dengan fungsi baru
-            remote.Invoke = function(self, ...)
-                local args = {...}
-                local timeStr = os.date("%H:%M:%S")
-
-                -- Serialisasi argumen dengan aman
-                local argsStr = ""
-                for i, arg in ipairs(args) do
-                    if i > 1 then argsStr = argsStr .. ", " end
-                    local serialized = pcall(serialize, arg) and serialize(arg) or tostring(arg)
-                    argsStr = argsStr .. serialized
-                end
-                if #args == 0 then argsStr = "(no args)" end
-
-                -- Panggil fungsi asli dengan pcall
-                local success, result = pcall(function()
-                    return oldInvoke(self, ...)
+    for _, button in ipairs(data.upgradeButtons) do
+        local event = button.MouseButton1Click
+        if event then
+            if firesignal then
+                firesignal(event)
+            else
+                local success, err = pcall(function()
+                    event:Fire()
                 end)
-
-                if success then
-                    local resultStr = pcall(serialize, result) and serialize(result) or tostring(result)
-                    addLog(name, argsStr, resultStr, false, timeStr)
-                    return result
-                else
-                    addLog(name, argsStr, tostring(result), true, timeStr)
-                    error(result)  -- Lempar ulang error
-                end
             end
+        end
+        task.wait()
+    end
+end
 
-            -- Tandai sudah di-hook di tabel (bukan di instance)
-            hookedRemotes[remote] = true
-            addLog("SYSTEM", "", "Berhasil hook " .. name, false, os.date("%H:%M:%S"))
-        else
-            addLog("SYSTEM", "", "RemoteFunction " .. name .. " tidak ditemukan", true, os.date("%H:%M:%S"))
+local function startCollectCashLoop()
+    while true do
+        if collectCashEnabled then
+            fireAllTouchInterests()
+        end
+        task.wait(1)
+    end
+end
+
+local function startUpgradeAllLoop()
+    while true do
+        if upgradeAllEnabled then
+            clickAllUpgrades()
+        end
+        task.wait(1)
+    end
+end
+
+local function startAFKLoop()
+    while true do
+        if afkEnabled then
+            local character = localPlayer.Character
+            if character and character:FindFirstChild("Humanoid") then
+                local humanoid = character.Humanoid
+                local currentPos = character.HumanoidRootPart.Position
+                local newPos = currentPos + character.HumanoidRootPart.CFrame.LookVector * 2
+                teleport(newPos)
+                task.wait(0.5)
+                teleport(currentPos)
+                task.wait(0.5)
+            end
+        end
+        task.wait(30)
+    end
+end
+
+UI.AddSlider({
+    Text = "Walkspeed",
+    Min = 16,
+    Max = 300,
+    Default = 16,
+    Callback = function(value)
+        local character = localPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.WalkSpeed = value
         end
     end
-end
+})
 
-addLog("SYSTEM", "", "Console siap. Menunggu aktivitas RemoteFunction...", false, os.date("%H:%M:%S"))
-
-print("Remote Console berhasil dijalankan (versi fix)")
-
-end) -- penutup pcall
-
-if not success then
-    warn("Terjadi error saat menjalankan Remote Console: " .. tostring(err))
-    -- Tampilkan UI sederhana untuk memberi tahu error
-    local gui = Instance.new("ScreenGui")
-    gui.Name = "ErrorNotification"
-    gui.ResetOnSpawn = false
-    pcall(function() gui.Parent = game:GetService("CoreGui") end)
-    if not gui.Parent then
-        gui.Parent = Players.LocalPlayer and Players.LocalPlayer:WaitForChild("PlayerGui")
+UI.AddButton({
+    Text = "Remove Lava",
+    Callback = function()
+        local lavasFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Lavas")
+        if lavasFolder then
+            lavasFolder:Destroy()
+        end
     end
-    if gui.Parent then
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(0, 400, 0, 100)
-        frame.Position = UDim2.new(0.5, -200, 0.5, -50)
-        frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        frame.BorderSizePixel = 2
-        frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
-        frame.Parent = gui
-        
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, -20, 1, -20)
-        label.Position = UDim2.new(0, 10, 0, 10)
-        label.BackgroundTransparency = 1
-        label.Text = "Error: " .. tostring(err) .. "\n\nCek apakah game mendukung dan coba jalankan ulang."
-        label.TextColor3 = Color3.fromRGB(255, 100, 100)
-        label.Font = Enum.Font.SourceSans
-        label.TextSize = 16
-        label.TextWrapped = true
-        label.Parent = frame
-        
-        local closeBtn = Instance.new("TextButton")
-        closeBtn.Size = UDim2.new(0, 60, 0, 25)
-        closeBtn.Position = UDim2.new(0.5, -30, 1, -30)
-        closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        closeBtn.Text = "Tutup"
-        closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        closeBtn.Font = Enum.Font.SourceSans
-        closeBtn.TextSize = 16
-        closeBtn.Parent = frame
-        closeBtn.MouseButton1Click:Connect(function() gui:Destroy() end)
+})
+
+UI.AddButton({
+    Text = "Remove VIP",
+    Callback = function()
+        local vipFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("VIPDoors")
+        if vipFolder then
+            vipFolder:Destroy()
+        end
     end
-end
+})
+
+UI.AddButton({
+    Text = "Rebirths Need",
+    Callback = processRebirthNeed
+})
+
+UI.AddButton({
+    Text = "To Home",
+    Callback = teleportToHome
+})
+
+createCheckbox({
+    Text = "Auto Godly",
+    Default = false,
+    Callback = function(state)
+        autoStates.Godly = state
+    end
+})
+
+createCheckbox({
+    Text = "Auto Celestial",
+    Default = false,
+    Callback = function(state)
+        autoStates.Celestial = state
+    end
+})
+
+createCheckbox({
+    Text = "Auto Secret",
+    Default = false,
+    Callback = function(state)
+        autoStates.Secret = state
+    end
+})
+
+createCheckbox({
+    Text = "Instant Proximity",
+    Default = false,
+    Callback = function(state)
+        instantProximityEnabled = state
+    end
+})
+
+createCheckbox({
+    Text = "Collect Cash",
+    Default = false,
+    Callback = function(state)
+        collectCashEnabled = state
+        if state then
+            getPlacesData()
+        end
+    end
+})
+
+createCheckbox({
+    Text = "Upgrade All",
+    Default = false,
+    Callback = function(state)
+        upgradeAllEnabled = state
+        if state then
+            getPlacesData()
+        end
+    end
+})
+
+createCheckbox({
+    Text = "AFK",
+    Default = false,
+    Callback = function(state)
+        afkEnabled = state
+    end
+})
+
+task.spawn(startAutoLoop)
+task.spawn(startCollectCashLoop)
+task.spawn(startUpgradeAllLoop)
+task.spawn(startAFKLoop)
+
+_G[guiName] = UI
