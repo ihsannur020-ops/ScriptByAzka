@@ -1,5 +1,5 @@
 -- Script UI untuk Delta Executor
--- GUI: Jump to Steal Brainrots - Library Version (dengan prioritas auto)
+-- GUI: Jump to Steal Brainrots - Library Version (dengan prioritas auto, slider Jump Power, dan Collect Cash)
 
 -- ==================================================
 -- 1. KONFIGURASI AWAL
@@ -8,8 +8,6 @@ local coreGui = game:GetService("CoreGui")
 local players = game:GetService("Players")
 local userInput = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
-local tweenService = game:GetService("TweenService")
-local teleportService = game:GetService("TeleportService")
 
 local localPlayer = players.LocalPlayer
 local guiName = "JumpToStealBrainrots_ByAzka"
@@ -124,14 +122,14 @@ end
 -- Buat container
 local slideContainer = createContainer("SlideContainer")
 local buttonContainer = createContainer("ButtonContainer")
-local checkboxContainer = createContainer("CheckboxContainer")  -- Ganti dari switchContainer
+local checkboxContainer = createContainer("CheckboxContainer")
 
 -- ==================================================
 -- 5. FUNGSI-FUNGSI UNTUK MENAMBAH ELEMEN
 -- ==================================================
 local UI = {}
 
--- Fungsi untuk membuat slider (opsional, tetap disediakan)
+-- Fungsi untuk membuat slider
 function UI.AddSlider(config)
     local container = slideContainer
     local text = config.Text or "Slider"
@@ -212,7 +210,7 @@ function UI.AddSlider(config)
             local relativeX = math.clamp(mousePos.X - trackAbsPos.X, 0, trackSize.X)
             local percent = relativeX / trackSize.X
             local value = min + (max - min) * percent
-            value = math.floor(value * 100) / 100
+            value = math.floor(value)  -- bulatkan sesuai permintaan
             valueLabel.Text = tostring(value)
             fill.Size = UDim2.new(percent, 0, 1, 0)
             thumb.Position = UDim2.new(percent, -6, 0, -4)
@@ -255,7 +253,7 @@ function UI.AddButton(config)
     return button
 end
 
--- Fungsi untuk membuat checkbox (menggantikan switch)
+-- Fungsi untuk membuat checkbox
 function UI.AddCheckbox(config)
     local container = checkboxContainer
     local text = config.Text or "Checkbox"
@@ -403,9 +401,8 @@ end)
 -- ==================================================
 -- 8. INISIALISASI DATA PLOTPLAYER BERDASARKAN BASEID
 -- ==================================================
-local PlotPlayer = nil  -- akan diisi string "Base 1", "Base 2", dll.
+local PlotPlayer = nil
 
--- Fungsi untuk mendapatkan BaseId dari player
 local function getBaseId()
     local baseIdAttr = localPlayer:GetAttribute("BaseId")
     if baseIdAttr and type(baseIdAttr) == "string" then
@@ -414,7 +411,6 @@ local function getBaseId()
     return nil
 end
 
--- Mapping baseId ke nama base yang ada di workspace.Bases
 local baseMapping = {
     ["Base 1"] = "Base 1",
     ["Base 2"] = "Base 2",
@@ -433,7 +429,6 @@ end
 
 _G.PlotPlayer = PlotPlayer
 
--- Koordinat untuk setiap base
 local baseCoordinates = {
     ["Base 1"] = Vector3.new(-13.896, 5, -120.056),
     ["Base 2"] = Vector3.new(-14.193, 5, -60.192),
@@ -442,7 +437,6 @@ local baseCoordinates = {
     ["Base 5"] = Vector3.new(-13.907, 5, 119.951),
 }
 
--- Koordinat intermediate setelah interaksi
 local intermediatePos = Vector3.new(56.818, 3.935, 31.258)
 
 -- ==================================================
@@ -459,10 +453,8 @@ local function teleportTo(position)
 end
 
 -- ==================================================
--- 10. FUNGSI-FUNGSI UNTUK TOMBOL
+-- 10. TOMBOL-Tombol
 -- ==================================================
-
--- Tombol VIP: Hancurkan ScriptedPart di semua zona VIP
 UI.AddButton({
     Text = "VIP",
     Callback = function()
@@ -481,7 +473,6 @@ UI.AddButton({
     end
 })
 
--- Tombol Go To Home
 UI.AddButton({
     Text = "Go To Home",
     Callback = function()
@@ -493,7 +484,6 @@ UI.AddButton({
     end
 })
 
--- Tombol Go To Sell
 UI.AddButton({
     Text = "Go To Sell",
     Callback = function()
@@ -501,7 +491,6 @@ UI.AddButton({
     end
 })
 
--- Tombol Go To Jump
 UI.AddButton({
     Text = "Go To Jump",
     Callback = function()
@@ -510,16 +499,39 @@ UI.AddButton({
 })
 
 -- ==================================================
--- 11. CHECKBOX UNTUK AUTO FITUR DENGAN PRIORITAS
+-- 11. SLIDER JUMP POWER
 -- ==================================================
+_G.JumpPower = 100  -- default
 
--- Variabel status auto
+UI.AddSlider({
+    Text = "Jump Power",
+    Min = 50,
+    Max = 500,
+    Default = 100,
+    Callback = function(val)
+        val = math.floor(val)
+        _G.JumpPower = val
+        -- Terapkan ke humanoid jika ada
+        local char = localPlayer.Character
+        if char then
+            local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+            if humanoid then
+                humanoid.JumpPower = val
+            end
+        end
+    end
+})
+
+-- ==================================================
+-- 12. CHECKBOX UNTUK AUTO FITUR DENGAN PRIORITAS
+-- ==================================================
 local autoSecretEnabled = false
 local autoGodEnabled = false
 local autoCelestialEnabled = false
 local infJumpEnabled = false
+local collectCashEnabled = false
 
--- Fungsi umum untuk mencari model dalam zone dengan prioritas
+-- Fungsi umum untuk mencari model dalam zone
 local function getModelsFromZones(zones)
     local models = {}
     for _, zoneName in ipairs(zones) do
@@ -535,7 +547,6 @@ local function getModelsFromZones(zones)
     return models
 end
 
--- Fungsi cek player lain dalam radius
 local function isPlayerNearby(model, radius)
     radius = radius or 3
     if not model then return false end
@@ -555,7 +566,6 @@ local function isPlayerNearby(model, radius)
     return false
 end
 
--- Fungsi mencari model yang tersedia (tanpa player di dekatnya) dalam daftar
 local function findAvailableModel(models)
     if #models == 0 then return nil end
     local shuffled = {}
@@ -572,7 +582,6 @@ local function findAvailableModel(models)
     return nil
 end
 
--- Fungsi interaksi dengan brainrot
 local function interactWithBrainrot(brainrotModel)
     if not brainrotModel then return false end
     local holdDuration = 0.25
@@ -600,7 +609,6 @@ end
 -- Loop utama prioritas
 coroutine.wrap(function()
     while true do
-        -- Jika tidak ada auto yang aktif, tunggu sebentar
         if not (autoCelestialEnabled or autoGodEnabled or autoSecretEnabled) then
             task.wait(1)
             goto continue
@@ -615,22 +623,19 @@ coroutine.wrap(function()
                 local rootPart = target:FindFirstChild("RootPart")
                 if rootPart then
                     teleportTo(rootPart.Position)
-                    task.wait(0.5)  -- sedikit waktu untuk stabil
+                    task.wait(0.5)
                     local success = interactWithBrainrot(target)
                     if success then
-                        task.wait(0.25)  -- tunggu 0.25 detik setelah interaksi
-                        teleportTo(intermediatePos)  -- ke intermediate
-                        -- langsung ke plot
+                        task.wait(0.25)
+                        teleportTo(intermediatePos)
                         if PlotPlayer and baseCoordinates[PlotPlayer] then
                             teleportTo(baseCoordinates[PlotPlayer])
                         end
                     end
                 end
-                -- Selesai siklus Celestial, tunggu 1 detik lalu ulang prioritas
                 task.wait(1)
                 goto continue
             end
-            -- jika tidak ada target, lanjut ke prioritas berikutnya
         end
 
         -- Prioritas 2: God
@@ -681,14 +686,11 @@ coroutine.wrap(function()
             end
         end
 
-        -- Jika tidak ada target sama sekali, tunggu sebentar lalu ulang
         task.wait(2)
-
         ::continue::
     end
 end)()
 
--- Checkbox Auto Secret
 UI.AddCheckbox({
     Text = "Auto Secret",
     Default = false,
@@ -697,7 +699,6 @@ UI.AddCheckbox({
     end
 })
 
--- Checkbox Auto God
 UI.AddCheckbox({
     Text = "Auto God",
     Default = false,
@@ -706,7 +707,6 @@ UI.AddCheckbox({
     end
 })
 
--- Checkbox Auto Celestial
 UI.AddCheckbox({
     Text = "Auto Celestial",
     Default = false,
@@ -716,7 +716,7 @@ UI.AddCheckbox({
 })
 
 -- ==================================================
--- 12. INFINITE JUMP
+-- 13. INFINITE JUMP
 -- ==================================================
 local function setupInfiniteJump(enabled)
     if enabled then
@@ -752,9 +752,47 @@ UI.AddCheckbox({
 })
 
 -- ==================================================
--- 13. EXPOSE FUNGSI KE GLOBAL
+-- 14. COLLECT CASH
+-- ==================================================
+coroutine.wrap(function()
+    while true do
+        if collectCashEnabled and PlotPlayer then
+            local base = workspace:FindFirstChild("Bases") and workspace.Bases:FindFirstChild(PlotPlayer)
+            if base then
+                local spots = base:FindFirstChild("Spots")
+                if spots then
+                    for i = 1, 30 do
+                        local spot = spots:FindFirstChild(tostring(i))
+                        if spot then
+                            local button = spot:FindFirstChild("Button")
+                            if button then
+                                local hitbox = button:FindFirstChild("ButtonHitbox")
+                                if hitbox then
+                                    teleportTo(hitbox.Position)
+                                    task.wait(0.2)  -- waktu untuk sentuhan
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        task.wait(10)  -- interval 10 detik
+    end
+end)()
+
+UI.AddCheckbox({
+    Text = "Collect Cash",
+    Default = false,
+    Callback = function(state)
+        collectCashEnabled = state
+    end
+})
+
+-- ==================================================
+-- 15. EXPOSE FUNGSI KE GLOBAL
 -- ==================================================
 _G[guiName] = UI
 
-print("GUI [Jump to Steal Brainrots] berhasil dimuat dengan prioritas auto.")
+print("GUI [Jump to Steal Brainrots] berhasil dimuat dengan prioritas auto, slider Jump Power, dan Collect Cash.")
 print("PlotPlayer saat ini: " .. tostring(PlotPlayer))
