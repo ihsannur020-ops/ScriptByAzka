@@ -1,22 +1,18 @@
--- Script UI untuk Semua Executor
--- GUI: Jump to Steal Brainrots (Perbaikan Deteksi Radius)
-
--- ==================================================
--- 1. KONFIGURASI AWAL
--- ==================================================
 local coreGui = game:GetService("CoreGui")
 local players = game:GetService("Players")
 local userInput = game:GetService("UserInputService")
+local tweenService = game:GetService("TweenService")
+local runService = game:GetService("RunService")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local virtualUser = game:GetService("VirtualUser")
+
 local localPlayer = players.LocalPlayer
-local guiName = "JumpToStealBrainrots_ByAzka"
-local displayName = "Jump to Steal Brainrots"
+local guiName = "SurviveLAVA_ByAzka"
 
--- Hapus GUI lama jika ada
-pcall(function() coreGui:FindFirstChild(guiName):Destroy() end)
+if coreGui:FindFirstChild(guiName) then
+    coreGui:FindFirstChild(guiName):Destroy()
+end
 
--- ==================================================
--- 2. MEMBUAT ELEMEN DASAR GUI (Sama seperti sebelumnya)
--- ==================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = guiName
 screenGui.Parent = coreGui
@@ -24,8 +20,8 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 350, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -175, 0.5, -150)
+mainFrame.Size = UDim2.new(0, 350, 0, 450)
+mainFrame.Position = UDim2.new(0.5, -175, 0.5, -225)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 2
@@ -42,7 +38,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -70, 0, 30)
 title.Position = UDim2.new(0, 5, 0, 5)
 title.BackgroundTransparency = 1
-title.Text = displayName
+title.Text = "Survive LAVA For Brainrot"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
@@ -55,7 +51,7 @@ minimizeBtn.Position = UDim2.new(1, -65, 0, 5)
 minimizeBtn.BackgroundTransparency = 1
 minimizeBtn.Text = "-"
 minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-minimizeBtn.TextSize = 20
+minimizeBtn.TextSize = 40
 minimizeBtn.Font = Enum.Font.GothamBold
 minimizeBtn.BorderSizePixel = 0
 minimizeBtn.Parent = mainFrame
@@ -71,7 +67,6 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.BorderSizePixel = 0
 closeBtn.Parent = mainFrame
 
--- ScrollingFrame
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, -20, 1, -55)
 scrollingFrame.Position = UDim2.new(0, 10, 0, 45)
@@ -88,7 +83,6 @@ scrollLayout.Parent = scrollingFrame
 scrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
 scrollLayout.Padding = UDim.new(0, 10)
 
--- Container
 local function createContainer(name)
     local container = Instance.new("Frame")
     container.Name = name
@@ -96,38 +90,202 @@ local function createContainer(name)
     container.BackgroundTransparency = 1
     container.Parent = scrollingFrame
     container.AutomaticSize = Enum.AutomaticSize.Y
+
     local layout = Instance.new("UIListLayout")
     layout.Parent = container
     layout.SortOrder = Enum.SortOrder.LayoutOrder
     layout.Padding = UDim.new(0, 6)
+
     return container
 end
 
 local slideContainer = createContainer("SlideContainer")
 local buttonContainer = createContainer("ButtonContainer")
-local checkboxContainer = createContainer("CheckboxContainer")
+local switchContainer = createContainer("SwitchContainer")
 
--- ==================================================
--- 3. FUNGSI UI (Sama seperti sebelumnya)
--- ==================================================
 local UI = {}
 
 function UI.AddSlider(config)
-    -- (kode slider tidak diubah, sama seperti sebelumnya)
-    -- ... (saya akan menyingkat untuk kejelasan, tetapi dalam implementasi sebenarnya tetap sama)
+    local container = slideContainer
+    local text = config.Text or "Slider"
+    local min = config.Min or 0
+    local max = config.Max or 100
+    local default = config.Default or (min + max) / 2
+    local callback = config.Callback or function() end
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 30)
+    frame.Position = UDim2.new(0, 10, 0, 0)
+    frame.BackgroundTransparency = 1
+    frame.Parent = container
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -60, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0, 50, 1, 0)
+    valueLabel.Position = UDim2.new(1, -50, 0, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Text = tostring(default)
+    valueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    valueLabel.Font = Enum.Font.Gotham
+    valueLabel.TextSize = 14
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = frame
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(1, 0, 0, 4)
+    track.Position = UDim2.new(0, 0, 1, -8)
+    track.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    track.BorderSizePixel = 0
+    track.Parent = frame
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+    fill.BorderSizePixel = 0
+    fill.Parent = track
+
+    local thumb = Instance.new("TextButton")
+    thumb.Size = UDim2.new(0, 12, 0, 12)
+    thumb.Position = UDim2.new((default - min) / (max - min), -6, 0, -4)
+    thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    thumb.Text = ""
+    thumb.BorderSizePixel = 0
+    thumb.Parent = track
+
+    local thumbCorner = Instance.new("UICorner")
+    thumbCorner.CornerRadius = UDim.new(0, 6)
+    thumbCorner.Parent = thumb
+    local trackCorner = Instance.new("UICorner")
+    trackCorner.CornerRadius = UDim.new(0, 2)
+    trackCorner.Parent = track
+
+    local dragging = false
+    thumb.MouseButton1Down:Connect(function()
+        dragging = true
+    end)
+
+    userInput.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+
+    userInput.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mousePos = userInput:GetMouseLocation()
+            local trackAbsPos, trackSize = track.AbsolutePosition, track.AbsoluteSize
+            local relativeX = math.clamp(mousePos.X - trackAbsPos.X, 0, trackSize.X)
+            local percent = relativeX / trackSize.X
+            local value = min + (max - min) * percent
+            value = math.floor(value + 0.5)
+            valueLabel.Text = tostring(value)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            thumb.Position = UDim2.new(percent, -6, 0, -4)
+            callback(value)
+        end
+    end)
+
+    return frame
 end
 
 function UI.AddButton(config)
-    -- (sama)
+    local container = buttonContainer
+    local text = config.Text or "Button"
+    local callback = config.Callback or function() end
+
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 0, 30)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 14
+    button.BorderSizePixel = 0
+    button.Parent = container
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Parent = button
+
+    button.MouseButton1Click:Connect(callback)
+
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end)
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+
+    return button
 end
 
-function UI.AddCheckbox(config)
-    -- (sama)
+local function createCheckbox(config)
+    local container = switchContainer
+    local text = config.Text or "Checkbox"
+    local default = config.Default or false
+    local callback = config.Callback or function() end
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 0, 30)
+    frame.BackgroundTransparency = 1
+    frame.Parent = container
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -60, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    local checkBtn = Instance.new("TextButton")
+    checkBtn.Size = UDim2.new(0, 24, 0, 24)
+    checkBtn.Position = UDim2.new(1, -30, 0.5, -12)
+    checkBtn.BackgroundColor3 = default and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(60, 60, 60)
+    checkBtn.Text = ""
+    checkBtn.BorderSizePixel = 0
+    checkBtn.Parent = frame
+
+    local checkCorner = Instance.new("UICorner")
+    checkCorner.CornerRadius = UDim.new(0, 4)
+    checkCorner.Parent = checkBtn
+
+    local checkMark = Instance.new("TextLabel")
+    checkMark.Size = UDim2.new(1, 0, 1, 0)
+    checkMark.BackgroundTransparency = 1
+    checkMark.Text = default and "✓" or ""
+    checkMark.TextColor3 = Color3.fromRGB(255, 255, 255)
+    checkMark.TextSize = 18
+    checkMark.Font = Enum.Font.GothamBold
+    checkMark.Parent = checkBtn
+
+    local state = default
+
+    local function updateCheck()
+        checkBtn.BackgroundColor3 = state and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(60, 60, 60)
+        checkMark.Text = state and "✓" or ""
+    end
+
+    checkBtn.MouseButton1Click:Connect(function()
+        state = not state
+        updateCheck()
+        callback(state)
+    end)
+
+    return frame
 end
 
--- ==================================================
--- 4. MINIMIZED FRAME (Sama)
--- ==================================================
 local minimizedFrame = Instance.new("Frame")
 minimizedFrame.Size = UDim2.new(0, 50, 0, 50)
 minimizedFrame.Position = UDim2.new(1, -70, 1, -70)
@@ -147,7 +305,7 @@ miniLabel.Size = UDim2.new(1, 0, 1, 0)
 miniLabel.BackgroundTransparency = 1
 miniLabel.Text = "+"
 miniLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-miniLabel.TextSize = 24
+miniLabel.TextSize = 50
 miniLabel.Font = Enum.Font.GothamBold
 miniLabel.Parent = minimizedFrame
 
@@ -157,12 +315,47 @@ miniButton.BackgroundTransparency = 1
 miniButton.Text = ""
 miniButton.Parent = minimizedFrame
 
--- Drag logic (sama)
--- ... (saya singkat)
+local dragging = false
+local dragStartPos
+local frameStartPos
+local isDragging = false
+local dragThreshold = 5
 
--- ==================================================
--- 5. MINIMIZE DAN CLOSE
--- ==================================================
+miniButton.MouseButton1Down:Connect(function()
+    dragging = true
+    dragStartPos = userInput:GetMouseLocation()
+    frameStartPos = minimizedFrame.Position
+    isDragging = false
+end)
+
+userInput.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local currentPos = userInput:GetMouseLocation()
+        local delta = currentPos - dragStartPos
+        if not isDragging and (delta.X^2 + delta.Y^2) > dragThreshold^2 then
+            isDragging = true
+        end
+        if isDragging then
+            minimizedFrame.Position = UDim2.new(
+                frameStartPos.X.Scale,
+                frameStartPos.X.Offset + delta.X,
+                frameStartPos.Y.Scale,
+                frameStartPos.Y.Offset + delta.Y
+            )
+        end
+    end
+end)
+
+userInput.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and dragging then
+        if not isDragging then
+            minimizedFrame.Visible = false
+            mainFrame.Visible = true
+        end
+        dragging = false
+    end
+end)
+
 minimizeBtn.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
     minimizedFrame.Visible = true
@@ -172,163 +365,102 @@ closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- ==================================================
--- 6. INISIALISASI PLOTPLAYER
--- ==================================================
-local PlotPlayer = nil
-local function getBaseId()
-    return localPlayer:GetAttribute("BaseId")
-end
-
-local baseMapping = {
-    ["Base 1"] = "Base 1",
-    ["Base 2"] = "Base 2",
-    ["Base 3"] = "Base 3",
-    ["Base 4"] = "Base 4",
-    ["Base 5"] = "Base 5",
+local rebirthData = {
+    [1] = "BonecaAmbalabu",
+    [2] = "CactoHipopotamo",
+    [3] = "BallerinaCappuccina",
+    [4] = "CocofantoElefanto",
+    [5] = "Garama",
+    [6] = "UdinDinDinDun",
+    [7] = "LaVaccaSaturnoSatunita",
+    [8] = "LasVaquitasSaturnitas",
+    [9] = "GorilloWatermelondrillo",
+    [10] = "CompactaroniDiskaloni",
+    [11] = "ChillinChilli",
+    [12] = "CrazylonePizaione",
 }
 
-local baseId = getBaseId()
-if baseId and baseMapping[baseId] then
-    PlotPlayer = baseMapping[baseId]
-else
-    PlotPlayer = "Base 1"
-    warn("BaseId tidak ditemukan, menggunakan default Base 1")
-end
-
-_G.PlotPlayer = PlotPlayer
-
-local baseCoordinates = {
-    ["Base 1"] = Vector3.new(-13.896, 5, -120.056),
-    ["Base 2"] = Vector3.new(-14.193, 5, -60.192),
-    ["Base 3"] = Vector3.new(-13.609, 5, -0.075),
-    ["Base 4"] = Vector3.new(-13.91, 5, 59.939),
-    ["Base 5"] = Vector3.new(-13.907, 5, 119.951),
+local plotPositions = {
+    [1] = Vector3.new(100.205, 7, 83.222),
+    [2] = Vector3.new(50.205, 7, 83.221),
+    [3] = Vector3.new(0.205, 7, 83.221),
+    [4] = Vector3.new(-49.795, 7, 83.221),
+    [5] = Vector3.new(-99.795, 7, 83.221)
 }
 
-local intermediatePos = Vector3.new(56.818, 3.935, 31.258)
+local afterInteractPoint = Vector3.new(-127.503, 5, -1.24)
 
--- ==================================================
--- 7. FUNGSI TELEPORT
--- ==================================================
-local function teleportTo(position)
+local currentPlotNumber = nil
+
+local function getPlotNumber()
+    if currentPlotNumber then return currentPlotNumber end
+    local plotAttr = localPlayer:GetAttribute("Plot")
+    if plotAttr then
+        local num = tonumber(plotAttr:match("%d+"))
+        if num and num >= 1 and num <= 5 then
+            currentPlotNumber = num
+            return num
+        end
+    end
+    return nil
+end
+
+local function getPlayerModel()
+    return workspace:FindFirstChild(localPlayer.Name)
+end
+
+local function teleport(position)
     local character = localPlayer.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
         character.HumanoidRootPart.CFrame = CFrame.new(position)
+    end
+end
+
+local function teleportToPlot(plotNumber)
+    if plotNumber and plotPositions[plotNumber] then
+        teleport(plotPositions[plotNumber])
+    end
+end
+
+local function teleportToHome()
+    local plot = getPlotNumber()
+    if plot then
+        teleportToPlot(plot)
+    end
+end
+
+local function interactWithBrainrot(brainrotModel)
+    if not brainrotModel then return false end
+    local holdDuration = 1.5  -- diubah sesuai data ProximityPrompt (sebelumnya 1.7)
+    local prompt = brainrotModel:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if prompt then
+        prompt:InputHoldBegin()
+        task.wait(holdDuration)
+        prompt:InputHoldEnd()
+        return true
     else
-        localPlayer.CharacterAdded:Wait()
-        teleportTo(position)
+        local clickDetector = brainrotModel:FindFirstChildWhichIsA("ClickDetector", true)
+        if clickDetector then
+            fireclickdetector(clickDetector)
+            return true
+        end
     end
+    return false
 end
 
--- ==================================================
--- 8. TOMBOL
--- ==================================================
-UI.AddButton({
-    Text = "VIP",
-    Callback = function()
-        local vipZones = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Walls") and workspace.Map.Walls:FindFirstChild("VIPsZones")
-        if vipZones then
-            for i = 1, 7 do
-                local zone = vipZones:FindFirstChild(tostring(i))
-                if zone then
-                    local scriptedPart = zone:FindFirstChild("ScriptedPart")
-                    if scriptedPart then scriptedPart:Destroy() end
-                end
-            end
-        end
-    end
-})
-
-UI.AddButton({
-    Text = "Go To Home",
-    Callback = function()
-        if PlotPlayer and baseCoordinates[PlotPlayer] then
-            teleportTo(baseCoordinates[PlotPlayer])
-        end
-    end
-})
-
-UI.AddButton({
-    Text = "Go To Sell",
-    Callback = function()
-        teleportTo(Vector3.new(42.287, 4, 139.483))
-    end
-})
-
-UI.AddButton({
-    Text = "Go To Jump",
-    Callback = function()
-        teleportTo(Vector3.new(42.96, 3.915, 1.243))
-    end
-})
-
--- ==================================================
--- 9. SLIDER JUMP POWER
--- ==================================================
-_G.JumpPower = 100
-UI.AddSlider({
-    Text = "Jump Power",
-    Min = 50,
-    Max = 500,
-    Default = 100,
-    Callback = function(val)
-        val = math.floor(val)
-        _G.JumpPower = val
-        local char = localPlayer.Character
-        if char then
-            local humanoid = char:FindFirstChildWhichIsA("Humanoid")
-            if humanoid then humanoid.JumpPower = val end
-        end
-    end
-})
-
--- ==================================================
--- 10. AUTO FITUR DENGAN DETEKSI RADIUS YANG BENAR
--- ==================================================
-math.randomseed(os.time())
-
-local autoSecretEnabled = false
-local autoGodEnabled = false
-local autoCelestialEnabled = false
-local infJumpEnabled = false
-local collectCashEnabled = false
-
--- Fungsi mendapatkan model dari zone
-local function getModelsFromZones(zones)
-    local models = {}
-    for _, zoneName in ipairs(zones) do
-        local zone = workspace:FindFirstChild("Zones") and workspace.Zones:FindFirstChild(zoneName)
-        if zone then
-            for _, child in ipairs(zone:GetChildren()) do
-                if child:IsA("Model") and child:FindFirstChild("RootPart") then
-                    table.insert(models, child)
-                end
-            end
-        end
-    end
-    return models
-end
-
--- Fungsi cek apakah ada pemain lain dalam radius tertentu dari posisi model
+-- ========== MODIFIKASI: radius default diubah menjadi 10 ==========
 local function isPlayerNearby(model, radius)
-    radius = radius or 3
-    -- Dapatkan posisi model dari RootPart
-    local rootPart = model:FindFirstChild("RootPart")
-    if not rootPart then return false end
-    local modelPos = rootPart.Position
-
-    -- Loop semua pemain kecuali localPlayer
+    radius = radius or 10   -- sebelumnya 3, sekarang 10
+    if not model then return false end
+    local modelPos = model:GetPivot().Position
+    
     for _, player in ipairs(players:GetPlayers()) do
         if player ~= localPlayer then
-            local char = player.Character
-            if char then
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local dist = (hrp.Position - modelPos).Magnitude
-                    if dist <= radius then
-                        return true  -- ada pemain lain di dekat model
-                    end
+            local character = player.Character
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                local distance = (character.HumanoidRootPart.Position - modelPos).Magnitude
+                if distance <= radius then
+                    return true
                 end
             end
         end
@@ -336,202 +468,386 @@ local function isPlayerNearby(model, radius)
     return false
 end
 
--- Fungsi mencari model yang tersedia (tidak ada pemain di dekatnya)
 local function findAvailableModel(models)
     if #models == 0 then return nil end
-    -- Acak urutan agar tidak selalu model yang sama
     local shuffled = {}
     for i, v in ipairs(models) do shuffled[i] = v end
     for i = #shuffled, 2, -1 do
         local j = math.random(i)
         shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
     end
-    -- Cari model pertama yang tidak memiliki pemain di dekatnya
     for _, model in ipairs(shuffled) do
         if not isPlayerNearby(model) then
             return model
         end
     end
-    return nil  -- semua model memiliki pemain di dekatnya
+    return nil
 end
 
--- Fungsi interaksi dengan brainrot
-local function interactWithBrainrot(brainrotModel)
-    if not brainrotModel then return false end
-    local holdDuration = 0.25
-    
-    -- Cari ProximityPrompt di RootPart.CollectPrompt
-    local rootPart = brainrotModel:FindFirstChild("RootPart")
-    if rootPart then
-        local prompt = rootPart:FindFirstChild("CollectPrompt")
-        if prompt and prompt:IsA("ProximityPrompt") then
-            prompt:InputHoldBegin()
-            wait(holdDuration)
-            prompt:InputHoldEnd()
-            return true
+local function findModelsByName(name)
+    local brainrotsFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Brainrots")
+    if not brainrotsFolder then return {} end
+    local models = {}
+    for _, folder in ipairs(brainrotsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            local model = folder:FindFirstChild(name)
+            if model then
+                table.insert(models, model)
+            end
         end
     end
-    
-    -- Coba ClickDetector
-    local clickDetector = brainrotModel:FindFirstChildWhichIsA("ClickDetector", true)
-    if clickDetector then
-        if fireclickdetector then
-            fireclickdetector(clickDetector)
-            return true
-        else
-            warn("fireclickdetector tidak tersedia")
-        end
-    end
-    return false
+    return models
 end
 
--- Loop utama prioritas (hanya satu model per siklus)
-coroutine.wrap(function()
-    while true do
-        if autoCelestialEnabled or autoGodEnabled or autoSecretEnabled then
-            local targetModel = nil
-
-            -- Prioritas 1: Celestial
-            if autoCelestialEnabled then
-                local models = getModelsFromZones({"Zone16", "Zone15"})
-                targetModel = findAvailableModel(models)
-            end
-
-            -- Prioritas 2: God
-            if not targetModel and autoGodEnabled then
-                local models = getModelsFromZones({"Zone14", "Zone13"})
-                targetModel = findAvailableModel(models)
-            end
-
-            -- Prioritas 3: Secret
-            if not targetModel and autoSecretEnabled then
-                local models = getModelsFromZones({"Zone12", "Zone11"})
-                targetModel = findAvailableModel(models)
-            end
-
-            if targetModel then
-                local rootPart = targetModel:FindFirstChild("RootPart")
-                if rootPart then
-                    teleportTo(rootPart.Position)
-                    wait(0.5)  -- tunggu sebentar agar posisi stabil
-                    local success = interactWithBrainrot(targetModel)
-                    if success then
-                        wait(0.25)  -- jeda setelah interaksi
-                        teleportTo(intermediatePos)
-                        wait(0.1)
-                        if PlotPlayer and baseCoordinates[PlotPlayer] then
-                            teleportTo(baseCoordinates[PlotPlayer])
-                        end
-                    end
-                end
-                wait(1)  -- tunggu 1 detik sebelum siklus berikutnya
-            else
-                wait(2)  -- tidak ada target, tunggu lebih lama
-            end
-        else
-            wait(1)
+local function findModelsInFolder(folderName)
+    local brainrotsFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Brainrots")
+    if not brainrotsFolder then return {} end
+    local targetFolder = brainrotsFolder:FindFirstChild(folderName)
+    if not targetFolder then return {} end
+    local models = {}
+    for _, child in ipairs(targetFolder:GetChildren()) do
+        if child:IsA("Model") then
+            table.insert(models, child)
         end
     end
-end)()
+    return models
+end
 
-UI.AddCheckbox({
-    Text = "Auto Secret",
-    Default = false,
-    Callback = function(state) autoSecretEnabled = state end
-})
+local function processRebirthNeed()
+    local rebirths = localPlayer.leaderstats and localPlayer.leaderstats:FindFirstChild("Rebirths")
+    if not rebirths then
+        return
+    end
+    local value = tonumber(rebirths.Value)
+    if not value then
+        return
+    end
+    local index = value + 1
+    if index > 12 then
+        return
+    end
+    local brainrotName = rebirthData[index]
+    if not brainrotName then
+        return
+    end
 
-UI.AddCheckbox({
-    Text = "Auto God",
-    Default = false,
-    Callback = function(state) autoGodEnabled = state end
-})
+    local models = findModelsByName(brainrotName)
+    if #models == 0 then
+        return
+    end
 
-UI.AddCheckbox({
-    Text = "Auto Celestial",
-    Default = false,
-    Callback = function(state) autoCelestialEnabled = state end
-})
+    local targetModel = findAvailableModel(models)
+    if not targetModel then
+        return
+    end
 
--- ==================================================
--- 11. INFINITE JUMP
--- ==================================================
-local function setupInfiniteJump(enabled)
-    if enabled then
-        local jumpConnection
-        jumpConnection = userInput.InputBegan:Connect(function(input, gp)
-            if gp then return end
-            if input.KeyCode == Enum.KeyCode.Space then
-                local char = localPlayer.Character
-                if char then
-                    local humanoid = char:FindFirstChildWhichIsA("Humanoid")
-                    if humanoid then
-                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                    end
-                end
-            end
-        end)
-        _G.InfJumpConnection = jumpConnection
+    teleport(targetModel:GetPivot().Position + Vector3.new(0, 3, 0))
+    task.wait(0.5)
+
+    interactWithBrainrot(targetModel)
+
+    task.wait(1.5)  -- diubah dari 1.7 menjadi 1.5
+
+    teleport(afterInteractPoint)
+    task.wait(0.5)
+
+    local plot = getPlotNumber()
+    if plot then
+        teleportToPlot(plot)
     else
-        if _G.InfJumpConnection then
-            _G.InfJumpConnection:Disconnect()
-            _G.InfJumpConnection = nil
-        end
+        teleport(plotPositions[1])
     end
 end
 
-UI.AddCheckbox({
-    Text = "INF Jump",
+local autoStates = {
+    Godly = false,
+    Celestial = false,
+    Secret = false
+}
+
+local function autoCollect(typeName)
+    local models = findModelsInFolder(typeName)
+    if #models == 0 then return false end
+
+    local targetModel = findAvailableModel(models)
+    if not targetModel then
+        return false
+    end
+
+    teleport(targetModel:GetPivot().Position + Vector3.new(0, 3, 0))
+    task.wait(0.5)
+
+    interactWithBrainrot(targetModel)
+
+    task.wait(1.5)  -- diubah dari 1.7 menjadi 1.5
+
+    teleport(afterInteractPoint)
+    task.wait(0.5)
+
+    local plot = getPlotNumber()
+    if plot then
+        teleportToPlot(plot)
+    else
+        teleport(plotPositions[1])
+    end
+
+    return true
+end
+
+local function startAutoLoop()
+    while true do
+        local order = {}
+        if autoStates.Godly then table.insert(order, "Godly") end
+        if autoStates.Celestial then table.insert(order, "Celestial") end
+        if autoStates.Secret then table.insert(order, "Secret") end
+
+        if #order > 0 then
+            for _, typeName in ipairs(order) do
+                if autoStates[typeName] then
+                    local success = autoCollect(typeName)
+                    if success then
+                        task.wait(1)
+                    end
+                end
+            end
+        end
+        task.wait(1)
+    end
+end
+
+local collectCashEnabled = false
+local upgradeAllEnabled = false
+local instantProximityEnabled = false
+local afkEnabled = false
+
+local placesCache = nil
+
+local function getPlacesData()
+    if placesCache then return placesCache end
+    local plotNum = getPlotNumber()
+    if not plotNum then return nil end
+
+    local plotsFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Plots")
+    if not plotsFolder then return nil end
+
+    local plotFolder = plotsFolder:FindFirstChild(tostring(plotNum))
+    if not plotFolder then return nil end
+
+    local places = plotFolder:FindFirstChild("Places")
+    if not places then return nil end
+
+    local touchParts = {}
+    local upgradeButtons = {}
+
+    for i = 1, 30 do
+        local model = places:FindFirstChild(tostring(i))
+        if model then
+            local claim = model:FindFirstChild("Claim")
+            if claim then
+                local touchInterest = claim:FindFirstChildWhichIsA("TouchTransmitter")
+                if touchInterest then
+                    table.insert(touchParts, claim)
+                end
+            end
+            local upgradePart = model:FindFirstChild("Upgrade")
+            if upgradePart then
+                local surfaceGui = upgradePart:FindFirstChildWhichIsA("SurfaceGui")
+                if surfaceGui then
+                    local upgradeButton = surfaceGui:FindFirstChild("Upgrade")
+                    if upgradeButton and upgradeButton:IsA("GuiButton") then
+                        table.insert(upgradeButtons, upgradeButton)
+                    end
+                end
+            end
+        end
+    end
+
+    placesCache = {
+        touchParts = touchParts,
+        upgradeButtons = upgradeButtons
+    }
+    return placesCache
+end
+
+local function fireAllTouchInterests()
+    local data = getPlacesData()
+    if not data then return end
+
+    local character = localPlayer.Character
+    if not character then return end
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+
+    for _, part in ipairs(data.touchParts) do
+        firetouchinterest(rootPart, part, 0)
+        firetouchinterest(rootPart, part, 1)
+        task.wait()
+    end
+end
+
+local function clickAllUpgrades()
+    local data = getPlacesData()
+    if not data then return end
+
+    for _, button in ipairs(data.upgradeButtons) do
+        local event = button.MouseButton1Click
+        if event then
+            if firesignal then
+                firesignal(event)
+            else
+                local success, err = pcall(function()
+                    event:Fire()
+                end)
+            end
+        end
+        task.wait()
+    end
+end
+
+local function startCollectCashLoop()
+    while true do
+        if collectCashEnabled then
+            fireAllTouchInterests()
+        end
+        task.wait(1)
+    end
+end
+
+local function startUpgradeAllLoop()
+    while true do
+        if upgradeAllEnabled then
+            clickAllUpgrades()
+        end
+        task.wait(1)
+    end
+end
+
+local function startAFKLoop()
+    while true do
+        if afkEnabled then
+            local character = localPlayer.Character
+            if character and character:FindFirstChild("Humanoid") then
+                local humanoid = character.Humanoid
+                local currentPos = character.HumanoidRootPart.Position
+                local newPos = currentPos + character.HumanoidRootPart.CFrame.LookVector * 2
+                teleport(newPos)
+                task.wait(0.5)
+                teleport(currentPos)
+                task.wait(0.5)
+            end
+        end
+        task.wait(30)
+    end
+end
+
+UI.AddSlider({
+    Text = "Walkspeed",
+    Min = 16,
+    Max = 300,
+    Default = 16,
+    Callback = function(value)
+        local character = localPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            character.Humanoid.WalkSpeed = value
+        end
+    end
+})
+
+UI.AddButton({
+    Text = "Remove Lava",
+    Callback = function()
+        local lavasFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Lavas")
+        if lavasFolder then
+            lavasFolder:Destroy()
+        end
+    end
+})
+
+UI.AddButton({
+    Text = "Remove VIP",
+    Callback = function()
+        local vipFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("VIPDoors")
+        if vipFolder then
+            vipFolder:Destroy()
+        end
+    end
+})
+
+UI.AddButton({
+    Text = "Rebirths Need",
+    Callback = processRebirthNeed
+})
+
+UI.AddButton({
+    Text = "To Home",
+    Callback = teleportToHome
+})
+
+createCheckbox({
+    Text = "Auto Godly",
     Default = false,
     Callback = function(state)
-        infJumpEnabled = state
-        setupInfiniteJump(state)
+        autoStates.Godly = state
     end
 })
 
--- ==================================================
--- 12. COLLECT CASH (Fire TouchTransmitter)
--- ==================================================
-coroutine.wrap(function()
-    while true do
-        if collectCashEnabled and PlotPlayer then
-            local base = workspace:FindFirstChild("Bases") and workspace.Bases:FindFirstChild(PlotPlayer)
-            if base then
-                local spots = base:FindFirstChild("Spots")
-                if spots then
-                    for i = 1, 30 do
-                        local spot = spots:FindFirstChild(tostring(i))
-                        if spot then
-                            local button = spot:FindFirstChild("Button")
-                            if button then
-                                local hitbox = button:FindFirstChild("ButtonHitbox")
-                                if hitbox then
-                                    local touchTransmitter = hitbox:FindFirstChildWhichIsA("TouchTransmitter")
-                                    if touchTransmitter then
-                                        touchTransmitter:Fire()
-                                        wait(0.05)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        wait(10)
+createCheckbox({
+    Text = "Auto Celestial",
+    Default = false,
+    Callback = function(state)
+        autoStates.Celestial = state
     end
-end)()
+})
 
-UI.AddCheckbox({
+createCheckbox({
+    Text = "Auto Secret",
+    Default = false,
+    Callback = function(state)
+        autoStates.Secret = state
+    end
+})
+
+createCheckbox({
+    Text = "Instant Proximity",
+    Default = false,
+    Callback = function(state)
+        instantProximityEnabled = state
+    end
+})
+
+createCheckbox({
     Text = "Collect Cash",
     Default = false,
-    Callback = function(state) collectCashEnabled = state end
+    Callback = function(state)
+        collectCashEnabled = state
+        if state then
+            getPlacesData()
+        end
+    end
 })
 
--- ==================================================
--- 13. EXPOSE KE GLOBAL
--- ==================================================
-_G[guiName] = UI
+createCheckbox({
+    Text = "Upgrade All",
+    Default = false,
+    Callback = function(state)
+        upgradeAllEnabled = state
+        if state then
+            getPlacesData()
+        end
+    end
+})
 
-print("=== GUI [Jump to Steal Brainrots] Dimuat ===")
-print("PlotPlayer:", PlotPlayer)
-print("Deteksi radius pemain menggunakan player.Character.HumanoidRootPart")
+createCheckbox({
+    Text = "AFK",
+    Default = false,
+    Callback = function(state)
+        afkEnabled = state
+    end
+})
+
+task.spawn(startAutoLoop)
+task.spawn(startCollectCashLoop)
+task.spawn(startUpgradeAllLoop)
+task.spawn(startAFKLoop)
+
+_G[guiName] = UI
