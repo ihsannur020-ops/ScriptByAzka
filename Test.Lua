@@ -1,22 +1,19 @@
--- Script UI untuk Delta Executor
--- GUI: Jump to Steal Brainrots - Library Version (dengan prioritas auto, slider Jump Power, dan Collect Cash)
+-- Script UI untuk Semua Executor
+-- GUI: Jump to Steal Brainrots (Versi Stabil)
 
 -- ==================================================
--- 1. KONFIGURASI AWAL
+-- 1. KONFIGURASI AWAL (Kompatibel Semua Executor)
 -- ==================================================
 local coreGui = game:GetService("CoreGui")
 local players = game:GetService("Players")
 local userInput = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
-
 local localPlayer = players.LocalPlayer
 local guiName = "JumpToStealBrainrots_ByAzka"
 local displayName = "Jump to Steal Brainrots"
 
 -- Hapus GUI lama jika ada
-if coreGui:FindFirstChild(guiName) then
-    coreGui:FindFirstChild(guiName):Destroy()
-end
+pcall(function() coreGui:FindFirstChild(guiName):Destroy() end)
 
 -- ==================================================
 -- 2. MEMBUAT ELEMEN DASAR GUI
@@ -119,7 +116,6 @@ local function createContainer(name)
     return container
 end
 
--- Buat container
 local slideContainer = createContainer("SlideContainer")
 local buttonContainer = createContainer("ButtonContainer")
 local checkboxContainer = createContainer("CheckboxContainer")
@@ -129,7 +125,6 @@ local checkboxContainer = createContainer("CheckboxContainer")
 -- ==================================================
 local UI = {}
 
--- Fungsi untuk membuat slider
 function UI.AddSlider(config)
     local container = slideContainer
     local text = config.Text or "Slider"
@@ -210,7 +205,7 @@ function UI.AddSlider(config)
             local relativeX = math.clamp(mousePos.X - trackAbsPos.X, 0, trackSize.X)
             local percent = relativeX / trackSize.X
             local value = min + (max - min) * percent
-            value = math.floor(value)  -- bulatkan sesuai permintaan
+            value = math.floor(value)  -- integer
             valueLabel.Text = tostring(value)
             fill.Size = UDim2.new(percent, 0, 1, 0)
             thumb.Position = UDim2.new(percent, -6, 0, -4)
@@ -221,7 +216,6 @@ function UI.AddSlider(config)
     return frame
 end
 
--- Fungsi untuk membuat tombol
 function UI.AddButton(config)
     local container = buttonContainer
     local text = config.Text or "Button"
@@ -253,7 +247,6 @@ function UI.AddButton(config)
     return button
 end
 
--- Fungsi untuk membuat checkbox
 function UI.AddCheckbox(config)
     local container = checkboxContainer
     local text = config.Text or "Checkbox"
@@ -399,10 +392,9 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==================================================
--- 8. INISIALISASI DATA PLOTPLAYER BERDASARKAN BASEID
+-- 8. INISIALISASI DATA PLOTPLAYER
 -- ==================================================
 local PlotPlayer = nil
-
 local function getBaseId()
     local baseIdAttr = localPlayer:GetAttribute("BaseId")
     if baseIdAttr and type(baseIdAttr) == "string" then
@@ -440,7 +432,7 @@ local baseCoordinates = {
 local intermediatePos = Vector3.new(56.818, 3.935, 31.258)
 
 -- ==================================================
--- 9. FUNGSI TELEPORT
+-- 9. FUNGSI TELEPORT (Kompatibel)
 -- ==================================================
 local function teleportTo(position)
     local character = localPlayer.Character
@@ -453,7 +445,7 @@ local function teleportTo(position)
 end
 
 -- ==================================================
--- 10. TOMBOL-TOMBOL
+-- 10. TOMBOL-Tombol
 -- ==================================================
 UI.AddButton({
     Text = "VIP",
@@ -478,8 +470,6 @@ UI.AddButton({
     Callback = function()
         if PlotPlayer and baseCoordinates[PlotPlayer] then
             teleportTo(baseCoordinates[PlotPlayer])
-        else
-            warn("PlotPlayer tidak valid")
         end
     end
 })
@@ -501,8 +491,7 @@ UI.AddButton({
 -- ==================================================
 -- 11. SLIDER JUMP POWER
 -- ==================================================
-_G.JumpPower = 100  -- default
-
+_G.JumpPower = 100
 UI.AddSlider({
     Text = "Jump Power",
     Min = 50,
@@ -511,7 +500,6 @@ UI.AddSlider({
     Callback = function(val)
         val = math.floor(val)
         _G.JumpPower = val
-        -- Terapkan ke humanoid jika ada
         local char = localPlayer.Character
         if char then
             local humanoid = char:FindFirstChildWhichIsA("Humanoid")
@@ -523,15 +511,17 @@ UI.AddSlider({
 })
 
 -- ==================================================
--- 12. CHECKBOX UNTUK AUTO FITUR DENGAN PRIORITAS
+-- 12. AUTO FITUR DENGAN PRIORITAS (1 SIKLUS 1 MODEL)
 -- ==================================================
+math.randomseed(os.time())  -- untuk pengacakan
+
 local autoSecretEnabled = false
 local autoGodEnabled = false
 local autoCelestialEnabled = false
 local infJumpEnabled = false
 local collectCashEnabled = false
 
--- Fungsi umum untuk mencari model dalam zone
+-- Fungsi umum
 local function getModelsFromZones(zones)
     local models = {}
     for _, zoneName in ipairs(zones) do
@@ -550,14 +540,15 @@ end
 local function isPlayerNearby(model, radius)
     radius = radius or 3
     if not model then return false end
-    local modelPos = model:GetPivot().Position
+    local rootPart = model:FindFirstChild("RootPart")
+    if not rootPart then return false end
+    local modelPos = rootPart.Position
     
     for _, player in ipairs(players:GetPlayers()) do
         if player ~= localPlayer then
-            local character = player.Character
-            if character and character:FindFirstChild("HumanoidRootPart") then
-                local distance = (character.HumanoidRootPart.Position - modelPos).Magnitude
-                if distance <= radius then
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                if (char.HumanoidRootPart.Position - modelPos).Magnitude <= radius then
                     return true
                 end
             end
@@ -586,116 +577,82 @@ local function interactWithBrainrot(brainrotModel)
     if not brainrotModel then return false end
     local holdDuration = 0.25
     
+    -- Cari ProximityPrompt
     local rootPart = brainrotModel:FindFirstChild("RootPart")
     if rootPart then
         local prompt = rootPart:FindFirstChild("CollectPrompt")
         if prompt and prompt:IsA("ProximityPrompt") then
             prompt:InputHoldBegin()
-            task.wait(holdDuration)
+            wait(holdDuration)
             prompt:InputHoldEnd()
             return true
         end
     end
     
+    -- Coba ClickDetector
     local clickDetector = brainrotModel:FindFirstChildWhichIsA("ClickDetector", true)
     if clickDetector then
-        -- Aman menggunakan pcall untuk fireclickdetector (mungkin tidak tersedia di beberapa executor)
-        local success = pcall(function()
+        if fireclickdetector then
             fireclickdetector(clickDetector)
-        end)
-        if success then
             return true
         else
-            warn("fireclickdetector gagal dipanggil, mungkin tidak didukung executor.")
+            warn("fireclickdetector tidak tersedia di executor ini")
         end
     end
-    
     return false
 end
 
--- Loop utama prioritas (tanpa goto, menggunakan flag acted)
+-- Loop utama prioritas (hanya 1 model per siklus)
 coroutine.wrap(function()
     while true do
-        local acted = false
+        if autoCelestialEnabled or autoGodEnabled or autoSecretEnabled then
+            local targetModel = nil
+            local source = ""
 
-        -- Jika tidak ada auto yang aktif, tunggu 1 detik
-        if not (autoCelestialEnabled or autoGodEnabled or autoSecretEnabled) then
-            task.wait(1)
-            acted = true  -- set acted true agar tidak wait 2 di akhir
-        else
             -- Prioritas 1: Celestial
             if autoCelestialEnabled then
-                local zones = {"Zone16", "Zone15"}
-                local models = getModelsFromZones(zones)
-                local target = findAvailableModel(models)
-                if target then
-                    local rootPart = target:FindFirstChild("RootPart")
-                    if rootPart then
-                        teleportTo(rootPart.Position)
-                        task.wait(0.5)
-                        local success = interactWithBrainrot(target)
-                        if success then
-                            task.wait(0.25)
-                            teleportTo(intermediatePos)
-                            if PlotPlayer and baseCoordinates[PlotPlayer] then
-                                teleportTo(baseCoordinates[PlotPlayer])
-                            end
-                        end
-                    end
-                    acted = true
-                end
+                local models = getModelsFromZones({"Zone16", "Zone15"})
+                targetModel = findAvailableModel(models)
+                if targetModel then source = "Celestial" end
             end
 
-            -- Prioritas 2: God (hanya jika belum acted)
-            if not acted and autoGodEnabled then
-                local zones = {"Zone14", "Zone13"}
-                local models = getModelsFromZones(zones)
-                local target = findAvailableModel(models)
-                if target then
-                    local rootPart = target:FindFirstChild("RootPart")
-                    if rootPart then
-                        teleportTo(rootPart.Position)
-                        task.wait(0.5)
-                        local success = interactWithBrainrot(target)
-                        if success then
-                            task.wait(0.25)
-                            teleportTo(intermediatePos)
-                            if PlotPlayer and baseCoordinates[PlotPlayer] then
-                                teleportTo(baseCoordinates[PlotPlayer])
-                            end
-                        end
-                    end
-                    acted = true
-                end
+            -- Prioritas 2: God (jika Celestial tidak ada atau tidak aktif)
+            if not targetModel and autoGodEnabled then
+                local models = getModelsFromZones({"Zone14", "Zone13"})
+                targetModel = findAvailableModel(models)
+                if targetModel then source = "God" end
             end
 
-            -- Prioritas 3: Secret (hanya jika belum acted)
-            if not acted and autoSecretEnabled then
-                local zones = {"Zone12", "Zone11"}
-                local models = getModelsFromZones(zones)
-                local target = findAvailableModel(models)
-                if target then
-                    local rootPart = target:FindFirstChild("RootPart")
-                    if rootPart then
-                        teleportTo(rootPart.Position)
-                        task.wait(0.5)
-                        local success = interactWithBrainrot(target)
-                        if success then
-                            task.wait(0.25)
-                            teleportTo(intermediatePos)
-                            if PlotPlayer and baseCoordinates[PlotPlayer] then
-                                teleportTo(baseCoordinates[PlotPlayer])
-                            end
+            -- Prioritas 3: Secret
+            if not targetModel and autoSecretEnabled then
+                local models = getModelsFromZones({"Zone12", "Zone11"})
+                targetModel = findAvailableModel(models)
+                if targetModel then source = "Secret" end
+            end
+
+            if targetModel then
+                local rootPart = targetModel:FindFirstChild("RootPart")
+                if rootPart then
+                    teleportTo(rootPart.Position)
+                    wait(0.5)  -- stabilisasi
+                    local success = interactWithBrainrot(targetModel)
+                    if success then
+                        wait(0.25)  -- jeda setelah interaksi
+                        teleportTo(intermediatePos)
+                        wait(0.1)   -- sedikit waktu
+                        if PlotPlayer and baseCoordinates[PlotPlayer] then
+                            teleportTo(baseCoordinates[PlotPlayer])
                         end
                     end
-                    acted = true
                 end
+                -- Tunggu 1 detik sebelum siklus berikutnya
+                wait(1)
+            else
+                -- Tidak ada target, tunggu sebentar
+                wait(2)
             end
-        end
-
-        -- Jika tidak ada aksi sama sekali, tunggu 2 detik sebelum iterasi berikutnya
-        if not acted then
-            task.wait(2)
+        else
+            wait(1)
         end
     end
 end)()
@@ -703,25 +660,19 @@ end)()
 UI.AddCheckbox({
     Text = "Auto Secret",
     Default = false,
-    Callback = function(state)
-        autoSecretEnabled = state
-    end
+    Callback = function(state) autoSecretEnabled = state end
 })
 
 UI.AddCheckbox({
     Text = "Auto God",
     Default = false,
-    Callback = function(state)
-        autoGodEnabled = state
-    end
+    Callback = function(state) autoGodEnabled = state end
 })
 
 UI.AddCheckbox({
     Text = "Auto Celestial",
     Default = false,
-    Callback = function(state)
-        autoCelestialEnabled = state
-    end
+    Callback = function(state) autoCelestialEnabled = state end
 })
 
 -- ==================================================
@@ -730,12 +681,12 @@ UI.AddCheckbox({
 local function setupInfiniteJump(enabled)
     if enabled then
         local jumpConnection
-        jumpConnection = userInput.InputBegan:Connect(function(input, gameProcessed)
-            if gameProcessed then return end
+        jumpConnection = userInput.InputBegan:Connect(function(input, gp)
+            if gp then return end
             if input.KeyCode == Enum.KeyCode.Space then
-                local character = localPlayer.Character
-                if character then
-                    local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+                local char = localPlayer.Character
+                if char then
+                    local humanoid = char:FindFirstChildWhichIsA("Humanoid")
                     if humanoid then
                         humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
                     end
@@ -761,7 +712,7 @@ UI.AddCheckbox({
 })
 
 -- ==================================================
--- 14. COLLECT CASH
+-- 14. COLLECT CASH (Teleport ke semua spot)
 -- ==================================================
 coroutine.wrap(function()
     while true do
@@ -776,9 +727,9 @@ coroutine.wrap(function()
                             local button = spot:FindFirstChild("Button")
                             if button then
                                 local hitbox = button:FindFirstChild("ButtonHitbox")
-                                if hitbox then
-                                    teleportTo(hitbox.Position)
-                                    task.wait(0.2)  -- waktu untuk sentuhan
+                                if hitbox and hitbox:IsA("BasePart") then
+                                    teleportTo(hitbox.Position + Vector3.new(0, 1, 0))  -- sedikit di atas agar menyentuh
+                                    wait(0.2)  -- waktu untuk sentuhan
                                 end
                             end
                         end
@@ -786,22 +737,21 @@ coroutine.wrap(function()
                 end
             end
         end
-        task.wait(10)  -- interval 10 detik
+        wait(10)  -- interval 10 detik
     end
 end)()
 
 UI.AddCheckbox({
     Text = "Collect Cash",
     Default = false,
-    Callback = function(state)
-        collectCashEnabled = state
-    end
+    Callback = function(state) collectCashEnabled = state end
 })
 
 -- ==================================================
--- 15. EXPOSE FUNGSI KE GLOBAL
+-- 15. EXPOSE KE GLOBAL
 -- ==================================================
 _G[guiName] = UI
 
-print("GUI [Jump to Steal Brainrots] berhasil dimuat dengan prioritas auto, slider Jump Power, dan Collect Cash.")
-print("PlotPlayer saat ini: " .. tostring(PlotPlayer))
+print("=== GUI [Jump to Steal Brainrots] Dimuat ===")
+print("PlotPlayer:", PlotPlayer)
+print("Gunakan _G['" .. guiName .. "'] untuk akses manual")
