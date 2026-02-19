@@ -1,5 +1,5 @@
 -- Script UI untuk Semua Executor
--- GUI: Jump to Steal Brainrots (Versi Stabil)
+-- GUI: Jump to Steal Brainrots (Versi Stabil + Collect Cash via TouchTransmitter)
 
 -- ==================================================
 -- 1. KONFIGURASI AWAL (Kompatibel Semua Executor)
@@ -513,7 +513,7 @@ UI.AddSlider({
 -- ==================================================
 -- 12. AUTO FITUR DENGAN PRIORITAS (1 SIKLUS 1 MODEL)
 -- ==================================================
-math.randomseed(os.time())  -- untuk pengacakan
+math.randomseed(os.time())
 
 local autoSecretEnabled = false
 local autoGodEnabled = false
@@ -616,7 +616,7 @@ coroutine.wrap(function()
                 if targetModel then source = "Celestial" end
             end
 
-            -- Prioritas 2: God (jika Celestial tidak ada atau tidak aktif)
+            -- Prioritas 2: God
             if not targetModel and autoGodEnabled then
                 local models = getModelsFromZones({"Zone14", "Zone13"})
                 targetModel = findAvailableModel(models)
@@ -634,21 +634,19 @@ coroutine.wrap(function()
                 local rootPart = targetModel:FindFirstChild("RootPart")
                 if rootPart then
                     teleportTo(rootPart.Position)
-                    wait(0.5)  -- stabilisasi
+                    wait(0.5)
                     local success = interactWithBrainrot(targetModel)
                     if success then
-                        wait(0.25)  -- jeda setelah interaksi
+                        wait(0.25)
                         teleportTo(intermediatePos)
-                        wait(0.1)   -- sedikit waktu
+                        wait(0.1)
                         if PlotPlayer and baseCoordinates[PlotPlayer] then
                             teleportTo(baseCoordinates[PlotPlayer])
                         end
                     end
                 end
-                -- Tunggu 1 detik sebelum siklus berikutnya
                 wait(1)
             else
-                -- Tidak ada target, tunggu sebentar
                 wait(2)
             end
         else
@@ -712,7 +710,7 @@ UI.AddCheckbox({
 })
 
 -- ==================================================
--- 14. COLLECT CASH (Teleport ke semua spot)
+-- 14. COLLECT CASH (Fire TouchTransmitter)
 -- ==================================================
 coroutine.wrap(function()
     while true do
@@ -727,9 +725,12 @@ coroutine.wrap(function()
                             local button = spot:FindFirstChild("Button")
                             if button then
                                 local hitbox = button:FindFirstChild("ButtonHitbox")
-                                if hitbox and hitbox:IsA("BasePart") then
-                                    teleportTo(hitbox.Position + Vector3.new(0, 1, 0))  -- sedikit di atas agar menyentuh
-                                    wait(0.2)  -- waktu untuk sentuhan
+                                if hitbox then
+                                    local touchTransmitter = hitbox:FindFirstChildWhichIsA("TouchTransmitter")
+                                    if touchTransmitter then
+                                        touchTransmitter:Fire()
+                                        wait(0.05)  -- jeda ringan agar tidak overload
+                                    end
                                 end
                             end
                         end
