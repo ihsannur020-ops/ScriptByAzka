@@ -1,5 +1,5 @@
 -- Script UI untuk Delta Executor
--- GUI: Jump to Steal Brainrots - Library Version
+-- GUI: Jump to Steal Brainrots - Library Version (dengan prioritas auto)
 
 -- ==================================================
 -- 1. KONFIGURASI AWAL
@@ -407,14 +407,10 @@ local PlotPlayer = nil  -- akan diisi string "Base 1", "Base 2", dll.
 
 -- Fungsi untuk mendapatkan BaseId dari player
 local function getBaseId()
-    -- Cek atribut "BaseId" pada player
     local baseIdAttr = localPlayer:GetAttribute("BaseId")
     if baseIdAttr and type(baseIdAttr) == "string" then
         return baseIdAttr
     end
-    -- Jika tidak ada, coba cek di dalam player (mungkin disimpan di leaderstats atau lainnya)
-    -- Fallback: cari di workspace.Bases berdasarkan posisi player?
-    -- Untuk sementara, kita asumsikan tidak ada.
     return nil
 end
 
@@ -427,18 +423,14 @@ local baseMapping = {
     ["Base 5"] = "Base 5",
 }
 
--- Coba dapatkan BaseId
 local baseId = getBaseId()
 if baseId and baseMapping[baseId] then
     PlotPlayer = baseMapping[baseId]
 else
-    -- Jika tidak ditemukan, coba cek berdasarkan posisi player? Atau default ke Base 1?
-    -- Untuk keperluan demo, kita set ke Base 1 jika tidak ada.
     PlotPlayer = "Base 1"
     warn("BaseId tidak ditemukan, menggunakan default Base 1")
 end
 
--- Simpan PlotPlayer ke _G agar bisa diakses oleh script lain
 _G.PlotPlayer = PlotPlayer
 
 -- Koordinat untuk setiap base
@@ -450,6 +442,9 @@ local baseCoordinates = {
     ["Base 5"] = Vector3.new(-13.907, 5, 119.951),
 }
 
+-- Koordinat intermediate setelah interaksi
+local intermediatePos = Vector3.new(56.818, 3.935, 31.258)
+
 -- ==================================================
 -- 9. FUNGSI TELEPORT
 -- ==================================================
@@ -458,7 +453,6 @@ local function teleportTo(position)
     if character and character:FindFirstChild("HumanoidRootPart") then
         character.HumanoidRootPart.CFrame = CFrame.new(position)
     else
-        -- Tunggu karakter muncul
         localPlayer.CharacterAdded:Wait()
         teleportTo(position)
     end
@@ -516,10 +510,10 @@ UI.AddButton({
 })
 
 -- ==================================================
--- 11. CHECKBOX UNTUK AUTO FITUR
+-- 11. CHECKBOX UNTUK AUTO FITUR DENGAN PRIORITAS
 -- ==================================================
 
--- Variabel untuk menyimpan status loop
+-- Variabel status auto
 local autoSecretEnabled = false
 local autoGodEnabled = false
 local autoCelestialEnabled = false
@@ -532,7 +526,6 @@ local function getModelsFromZones(zones)
         local zone = workspace:FindFirstChild("Zones") and workspace.Zones:FindFirstChild(zoneName)
         if zone then
             for _, child in ipairs(zone:GetChildren()) do
-                -- Asumsikan model brainrot adalah instance dengan kelas "Model" dan memiliki RootPart
                 if child:IsA("Model") and child:FindFirstChild("RootPart") then
                     table.insert(models, child)
                 end
@@ -565,7 +558,6 @@ end
 -- Fungsi mencari model yang tersedia (tanpa player di dekatnya) dalam daftar
 local function findAvailableModel(models)
     if #models == 0 then return nil end
-    -- Acak urutan
     local shuffled = {}
     for i, v in ipairs(models) do shuffled[i] = v end
     for i = #shuffled, 2, -1 do
@@ -585,7 +577,6 @@ local function interactWithBrainrot(brainrotModel)
     if not brainrotModel then return false end
     local holdDuration = 0.25
     
-    -- Cari ProximityPrompt di dalam model (biasanya di RootPart.CollectPrompt)
     local rootPart = brainrotModel:FindFirstChild("RootPart")
     if rootPart then
         local prompt = rootPart:FindFirstChild("CollectPrompt")
@@ -597,7 +588,6 @@ local function interactWithBrainrot(brainrotModel)
         end
     end
     
-    -- Alternatif: cari ClickDetector
     local clickDetector = brainrotModel:FindFirstChildWhichIsA("ClickDetector", true)
     if clickDetector then
         fireclickdetector(clickDetector)
@@ -607,38 +597,43 @@ local function interactWithBrainrot(brainrotModel)
     return false
 end
 
--- Loop untuk Auto Secret
+-- Loop utama prioritas
 coroutine.wrap(function()
     while true do
-        if autoSecretEnabled then
-            local zones = {"Zone12", "Zone11"}  -- prioritas 12 dulu
+        -- Jika tidak ada auto yang aktif, tunggu sebentar
+        if not (autoCelestialEnabled or autoGodEnabled or autoSecretEnabled) then
+            task.wait(1)
+            goto continue
+        end
+
+        -- Prioritas 1: Celestial
+        if autoCelestialEnabled then
+            local zones = {"Zone16", "Zone15"}
             local models = getModelsFromZones(zones)
             local target = findAvailableModel(models)
             if target then
-                -- Teleport ke model
                 local rootPart = target:FindFirstChild("RootPart")
                 if rootPart then
                     teleportTo(rootPart.Position)
-                    task.wait(0.5)  -- tunggu sebentar
-                    -- Interaksi
+                    task.wait(0.5)  -- sedikit waktu untuk stabil
                     local success = interactWithBrainrot(target)
                     if success then
-                        task.wait(0.3)  -- tunggu interaksi selesai
-                        -- Kembali ke plot
+                        task.wait(0.25)  -- tunggu 0.25 detik setelah interaksi
+                        teleportTo(intermediatePos)  -- ke intermediate
+                        -- langsung ke plot
                         if PlotPlayer and baseCoordinates[PlotPlayer] then
                             teleportTo(baseCoordinates[PlotPlayer])
                         end
                     end
                 end
+                -- Selesai siklus Celestial, tunggu 1 detik lalu ulang prioritas
+                task.wait(1)
+                goto continue
             end
+            -- jika tidak ada target, lanjut ke prioritas berikutnya
         end
-        task.wait(2)  -- interval pengecekan
-    end
-end)()
 
--- Loop untuk Auto God
-coroutine.wrap(function()
-    while true do
+        -- Prioritas 2: God
         if autoGodEnabled then
             local zones = {"Zone14", "Zone13"}
             local models = getModelsFromZones(zones)
@@ -650,23 +645,21 @@ coroutine.wrap(function()
                     task.wait(0.5)
                     local success = interactWithBrainrot(target)
                     if success then
-                        task.wait(0.3)
+                        task.wait(0.25)
+                        teleportTo(intermediatePos)
                         if PlotPlayer and baseCoordinates[PlotPlayer] then
                             teleportTo(baseCoordinates[PlotPlayer])
                         end
                     end
                 end
+                task.wait(1)
+                goto continue
             end
         end
-        task.wait(2)
-    end
-end)()
 
--- Loop untuk Auto Celestial
-coroutine.wrap(function()
-    while true do
-        if autoCelestialEnabled then
-            local zones = {"Zone16", "Zone15"}
+        -- Prioritas 3: Secret
+        if autoSecretEnabled then
+            local zones = {"Zone12", "Zone11"}
             local models = getModelsFromZones(zones)
             local target = findAvailableModel(models)
             if target then
@@ -676,15 +669,22 @@ coroutine.wrap(function()
                     task.wait(0.5)
                     local success = interactWithBrainrot(target)
                     if success then
-                        task.wait(0.3)
+                        task.wait(0.25)
+                        teleportTo(intermediatePos)
                         if PlotPlayer and baseCoordinates[PlotPlayer] then
                             teleportTo(baseCoordinates[PlotPlayer])
                         end
                     end
                 end
+                task.wait(1)
+                goto continue
             end
         end
+
+        -- Jika tidak ada target sama sekali, tunggu sebentar lalu ulang
         task.wait(2)
+
+        ::continue::
     end
 end)()
 
@@ -718,10 +718,8 @@ UI.AddCheckbox({
 -- ==================================================
 -- 12. INFINITE JUMP
 -- ==================================================
--- Infinite jump menggunakan UserInputService
 local function setupInfiniteJump(enabled)
     if enabled then
-        -- Koneksi untuk mendeteksi tombol spasi
         local jumpConnection
         jumpConnection = userInput.InputBegan:Connect(function(input, gameProcessed)
             if gameProcessed then return end
@@ -735,7 +733,6 @@ local function setupInfiniteJump(enabled)
                 end
             end
         end)
-        -- Simpan koneksi agar bisa dimatikan
         _G.InfJumpConnection = jumpConnection
     else
         if _G.InfJumpConnection then
@@ -759,6 +756,5 @@ UI.AddCheckbox({
 -- ==================================================
 _G[guiName] = UI
 
-print("GUI [Jump to Steal Brainrots] berhasil dimuat.")
-print("Gunakan _G['" .. guiName .. "'] untuk menambahkan elemen.")
+print("GUI [Jump to Steal Brainrots] berhasil dimuat dengan prioritas auto.")
 print("PlotPlayer saat ini: " .. tostring(PlotPlayer))
