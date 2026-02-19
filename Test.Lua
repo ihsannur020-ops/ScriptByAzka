@@ -431,7 +431,7 @@ end
 
 local function interactWithBrainrot(brainrotModel)
     if not brainrotModel then return false end
-    local holdDuration = 1.5  -- diubah sesuai data ProximityPrompt (sebelumnya 1.7)
+    local holdDuration = 1.7
     local prompt = brainrotModel:FindFirstChildWhichIsA("ProximityPrompt", true)
     if prompt then
         prompt:InputHoldBegin()
@@ -448,9 +448,9 @@ local function interactWithBrainrot(brainrotModel)
     return false
 end
 
--- ========== MODIFIKASI: radius default diubah menjadi 10 ==========
-local function isPlayerNearby(model, radius)
-    radius = radius or 10   -- sebelumnya 3, sekarang 10
+-- Fungsi isPlayerNearby dimodifikasi: parameter Distance dengan default 10
+local function isPlayerNearby(model, Distance)
+    Distance = Distance or 10
     if not model then return false end
     local modelPos = model:GetPivot().Position
     
@@ -458,8 +458,8 @@ local function isPlayerNearby(model, radius)
         if player ~= localPlayer then
             local character = player.Character
             if character and character:FindFirstChild("HumanoidRootPart") then
-                local distance = (character.HumanoidRootPart.Position - modelPos).Magnitude
-                if distance <= radius then
+                local dist = (character.HumanoidRootPart.Position - modelPos).Magnitude
+                if dist <= Distance then
                     return true
                 end
             end
@@ -546,7 +546,8 @@ local function processRebirthNeed()
 
     interactWithBrainrot(targetModel)
 
-    task.wait(1.5)  -- diubah dari 1.7 menjadi 1.5
+    -- Diubah dari 1.7 menjadi 1.6
+    task.wait(1.6)
 
     teleport(afterInteractPoint)
     task.wait(0.5)
@@ -579,7 +580,8 @@ local function autoCollect(typeName)
 
     interactWithBrainrot(targetModel)
 
-    task.wait(1.5)  -- diubah dari 1.7 menjadi 1.5
+    -- Diubah dari 1.7 menjadi 1.6
+    task.wait(1.6)
 
     teleport(afterInteractPoint)
     task.wait(0.5)
