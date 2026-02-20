@@ -1,5 +1,5 @@
 -- Script UI untuk Delta Executor
--- GUI: Speed Escape for Brainrots - Fixed + Fitur Lengkap
+-- GUI: Speed Escape for Brainrots - Final (Tanpa Auto Rarity, dengan Claim Manual)
 
 -- ==================================================
 -- 1. KONFIGURASI AWAL
@@ -9,7 +9,6 @@ local players = game:GetService("Players")
 local userInput = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
 local virtualInput = game:GetService("VirtualInputManager")
-local teleportService = game:GetService("TeleportService")
 
 local localPlayer = players.LocalPlayer
 local guiName = "SpeedEscapeforBrainrots"
@@ -28,7 +27,7 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 350, 0, 500)  -- lebih besar untuk tombol tambahan
+mainFrame.Size = UDim2.new(0, 350, 0, 500)
 mainFrame.Position = UDim2.new(0.5, -175, 0.5, -250)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BackgroundTransparency = 0.1
@@ -94,7 +93,7 @@ scrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
 scrollLayout.Padding = UDim.new(0, 10)
 
 -- ==================================================
--- 4. MEMBUAT KONTAINER (Slide, Button, Switch)
+-- 4. MEMBUAT KONTAINER
 -- ==================================================
 local function createContainer(name)
     local container = Instance.new("Frame")
@@ -402,17 +401,6 @@ end)
 local Player = localPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
 
--- Prioritas mutation
-local MutationPriority = {
-    Hacker = 1,
-    Valentine = 2,
-    Radioactive = 3,
-    Rainbow = 4,
-    Diamond = 5,
-    Gold = 6,
-    Common = 7
-}
-
 -- State untuk switch
 local autoStates = {
     AlwaysGround = false,
@@ -422,11 +410,8 @@ local autoStates = {
     RemoveLavas = false,
     RemoveMovingPart = false,
     RemoveFallPart = false,
-    AutoSecret = false,
-    AutoDivine = false,
-    AutoSupreme = false,
-    InstantClaim = false,
     LoadAll = false
+    -- AutoSecret, AutoDivine, AutoSupreme, InstantClaim dihapus
 }
 
 local loops = {}
@@ -570,182 +555,7 @@ local function removeFallPartLoop()
 end
 
 -- ==================================================
--- 8.8 Auto Functions (Secret, Divine, Supreme) - Perbaikan
--- ==================================================
-local function getMutationPriority(model)
-    local mutationLabel = model:FindFirstChild("BillboardAttachment") and
-                          model.BillboardAttachment:FindFirstChild("EntityBillboardTemplate") and
-                          model.BillboardAttachment.EntityBillboardTemplate:FindFirstChild("MutationLabel")
-    if mutationLabel and mutationLabel:IsA("TextLabel") then
-        local text = mutationLabel.Text
-        return MutationPriority[text] or 999
-    end
-    return 999
-end
-
-local function getRarity(model)
-    local rarityLabel = model:FindFirstChild("BillboardAttachment") and
-                        model.BillboardAttachment:FindFirstChild("EntityBillboardTemplate") and
-                        model.BillboardAttachment.EntityBillboardTemplate:FindFirstChild("RarityLabel")
-    if rarityLabel and rarityLabel:IsA("TextLabel") then
-        return rarityLabel.Text
-    end
-    return nil
-end
-
-local function findBestBrainrot(targetRarity)
-    local bestModel = nil
-    local bestPriority = 999
-    local caches = workspace:FindFirstChild("Caches")
-    if not caches then return nil end
-    local clientEntities = caches:FindFirstChild("ClientEntities")
-    if not clientEntities then return nil end
-
-    for _, model in ipairs(clientEntities:GetChildren()) do
-        if model:IsA("Model") then
-            local rarity = getRarity(model)
-            if rarity == targetRarity then
-                local priority = getMutationPriority(model)
-                if priority < bestPriority then
-                    bestPriority = priority
-                    bestModel = model
-                end
-            end
-        end
-    end
-    return bestModel
-end
-
-local function interactWithBrainrot(model)
-    local prompt = nil
-    for _, child in ipairs(model:GetDescendants()) do
-        if child:IsA("ProximityPrompt") then
-            prompt = child
-            break
-        end
-    end
-    if not prompt then return false end
-
-    if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-        local root = Player.Character.HumanoidRootPart
-        local targetCF = model:GetPivot() * CFrame.new(0, 0, -3)
-        root.CFrame = targetCF
-    end
-    task.wait(0.5)
-
-    virtualInput:SendKeyEvent(true, Enum.KeyCode.E, false, nil)
-    task.wait(1.6)
-    virtualInput:SendKeyEvent(false, Enum.KeyCode.E, false, nil)
-
-    return true
-end
-
-local function teleportBack()
-    teleportTo(Vector3.new(-1107.992, 62.500, -1193.344))
-end
-
-local autoCollectRunning = false
-local function startAutoCollect()
-    if autoCollectRunning then return end
-    autoCollectRunning = true
-
-    local rarityOrder = {"Supreme", "Divine", "Secret"}
-
-    while autoCollectRunning do
-        local anyActive = autoStates.AutoSupreme or autoStates.AutoDivine or autoStates.AutoSecret
-        if not anyActive then
-            autoCollectRunning = false
-            break
-        end
-
-        for _, rarity in ipairs(rarityOrder) do
-            if autoStates["Auto" .. rarity] then
-                local model = findBestBrainrot(rarity)
-                if model then
-                    local success = interactWithBrainrot(model)
-                    if success then
-                        task.wait(1.6)
-                        teleportBack()
-                        task.wait(1)
-                    end
-                end
-            end
-        end
-        task.wait(1)
-    end
-end
-
-local function updateAutoCollect()
-    if autoStates.AutoSupreme or autoStates.AutoDivine or autoStates.AutoSecret then
-        if not autoCollectRunning then
-            coroutine.wrap(startAutoCollect)()
-        end
-    else
-        autoCollectRunning = false
-    end
-end
-
--- ==================================================
--- 8.9 Instant Claim
--- ==================================================
-local instantClaimRunning = false
-local savedPosition = nil
-
-local function getTimerText(model)
-    local clock = model:FindFirstChild("BillboardAttachment") and
-                  model.BillboardAttachment:FindFirstChild("EntityBillboardTemplate") and
-                  model.BillboardAttachment.EntityBillboardTemplate:FindFirstChild("ClockTimer")
-    if clock and clock:IsA("Frame") then
-        local textLabel = clock:FindFirstChildOfClass("TextLabel")
-        if textLabel then
-            return textLabel.Text
-        end
-    end
-    return nil
-end
-
-local function startInstantClaim()
-    if instantClaimRunning then return end
-    instantClaimRunning = true
-
-    while autoStates.InstantClaim do
-        local caches = workspace:FindFirstChild("Caches")
-        if caches then
-            local clientEntities = caches:FindFirstChild("ClientEntities")
-            if clientEntities then
-                for _, model in ipairs(clientEntities:GetChildren()) do
-                    if model:IsA("Model") then
-                        local timerText = getTimerText(model)
-                        if timerText then
-                            -- Simpan timer pertama
-                            local firstTimer = timerText
-                            task.wait(0.2)
-                            local secondTimer = getTimerText(model)
-                            if secondTimer and secondTimer ~= firstTimer then
-                                -- Timer berubah, claim
-                                if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-                                    savedPosition = Player.Character.HumanoidRootPart.Position
-                                    teleportTo(Vector3.new(-1111.943, 63, -1194.301)) -- Home
-                                    task.wait(0.5)
-                                    if savedPosition then
-                                        teleportTo(savedPosition)
-                                        savedPosition = nil
-                                    end
-                                end
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        task.wait(1)
-    end
-    instantClaimRunning = false
-end
-
--- ==================================================
--- 8.10 Load All
+-- 8.8 Load All
 -- ==================================================
 local loadAllRunning = false
 local function startLoadAll()
@@ -753,22 +563,19 @@ local function startLoadAll()
     loadAllRunning = true
 
     while autoStates.LoadAll do
-        -- Akses semua model di ClientEntities untuk memaksa mereka dimuat
         local caches = workspace:FindFirstChild("Caches")
         if caches then
             local clientEntities = caches:FindFirstChild("ClientEntities")
             if clientEntities then
                 for _, model in ipairs(clientEntities:GetChildren()) do
                     if model:IsA("Model") then
-                        -- Akses properti untuk memicu loading
                         model:GetDescendants()
                     end
                 end
             end
         end
-        -- Juga akses part di workspace
         workspace:GetDescendants()
-        task.wait(2) -- interval agar tidak terlalu berat
+        task.wait(2)
     end
     loadAllRunning = false
 end
@@ -789,7 +596,21 @@ UI.AddSlider({
     end
 })
 
--- Tombol Teleport
+-- Tombol Claim Manual (tambah di awal buttonContainer)
+UI.AddButton({
+    Text = "Claim Manual",
+    Callback = function()
+        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+            local savedPos = Player.Character.HumanoidRootPart.Position
+            teleportTo(Vector3.new(-1111.943, 63, -1194.301)) -- Home
+            task.wait(0.5)
+            teleportTo(savedPos)
+            -- savedPos akan hilang setelah fungsi selesai (tidak perlu dihapus secara eksplisit)
+        end
+    end
+})
+
+-- Tombol Teleport lainnya
 UI.AddButton({
     Text = "Home",
     Callback = function()
@@ -945,44 +766,6 @@ UI.AddCheckbox({
 })
 
 UI.AddCheckbox({
-    Text = "Auto Secret",
-    Default = false,
-    Callback = function(state)
-        autoStates.AutoSecret = state
-        updateAutoCollect()
-    end
-})
-
-UI.AddCheckbox({
-    Text = "Auto Divine",
-    Default = false,
-    Callback = function(state)
-        autoStates.AutoDivine = state
-        updateAutoCollect()
-    end
-})
-
-UI.AddCheckbox({
-    Text = "Auto Supreme",
-    Default = false,
-    Callback = function(state)
-        autoStates.AutoSupreme = state
-        updateAutoCollect()
-    end
-})
-
-UI.AddCheckbox({
-    Text = "Instant Claim",
-    Default = false,
-    Callback = function(state)
-        autoStates.InstantClaim = state
-        if state then
-            coroutine.wrap(startInstantClaim)()
-        end
-    end
-})
-
-UI.AddCheckbox({
     Text = "Load All",
     Default = false,
     Callback = function(state)
@@ -998,4 +781,4 @@ UI.AddCheckbox({
 -- ==================================================
 _G[guiName] = UI
 
-print("GUI Speed Escape for Brainrots berhasil dimuat. Gunakan _G['" .. guiName .. "'] untuk menambahkan elemen secara manual.")
+print("GUI Speed Escape for Brainrots berhasil dimuat (versi final).")
