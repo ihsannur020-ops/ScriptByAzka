@@ -1,5 +1,5 @@
 -- Script UI untuk Delta Executor
--- GUI: Speed Escape for Brainrots - Library Version (Fixed)
+-- GUI: Speed Escape for Brainrots - Fixed + Fitur Lengkap
 
 -- ==================================================
 -- 1. KONFIGURASI AWAL
@@ -9,11 +9,11 @@ local players = game:GetService("Players")
 local userInput = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
 local virtualInput = game:GetService("VirtualInputManager")
+local teleportService = game:GetService("TeleportService")
 
 local localPlayer = players.LocalPlayer
 local guiName = "SpeedEscapeforBrainrots"
 
--- Hapus GUI lama jika ada
 if coreGui:FindFirstChild(guiName) then
     coreGui:FindFirstChild(guiName):Destroy()
 end
@@ -28,8 +28,8 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 350, 0, 450)
-mainFrame.Position = UDim2.new(0.5, -175, 0.5, -225)
+mainFrame.Size = UDim2.new(0, 350, 0, 500)  -- lebih besar untuk tombol tambahan
+mainFrame.Position = UDim2.new(0.5, -175, 0.5, -250)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 2
@@ -94,7 +94,7 @@ scrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
 scrollLayout.Padding = UDim.new(0, 10)
 
 -- ==================================================
--- 4. MEMBUAT KONTAINER
+-- 4. MEMBUAT KONTAINER (Slide, Button, Switch)
 -- ==================================================
 local function createContainer(name)
     local container = Instance.new("Frame")
@@ -113,6 +113,7 @@ local function createContainer(name)
 end
 
 local slideContainer = createContainer("SlideContainer")
+local buttonContainer = createContainer("ButtonContainer")
 local switchContainer = createContainer("SwitchContainer")
 
 -- ==================================================
@@ -120,7 +121,7 @@ local switchContainer = createContainer("SwitchContainer")
 -- ==================================================
 local UI = {}
 
--- Fungsi slider dengan margin kiri/kanan
+-- Slider
 function UI.AddSlider(config)
     local container = slideContainer
     local text = config.Text or "Slider"
@@ -134,7 +135,6 @@ function UI.AddSlider(config)
     frame.BackgroundTransparency = 1
     frame.Parent = container
 
-    -- Label teks (kiri)
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.5, -5, 0, 20)
     label.BackgroundTransparency = 1
@@ -145,7 +145,6 @@ function UI.AddSlider(config)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
 
-    -- Nilai slider (kanan)
     local valueLabel = Instance.new("TextLabel")
     valueLabel.Size = UDim2.new(0.5, -5, 0, 20)
     valueLabel.Position = UDim2.new(0.5, 5, 0, 0)
@@ -157,7 +156,6 @@ function UI.AddSlider(config)
     valueLabel.TextXAlignment = Enum.TextXAlignment.Right
     valueLabel.Parent = frame
 
-    -- Track slider (dengan margin kiri/kanan 10px)
     local trackContainer = Instance.new("Frame")
     trackContainer.Size = UDim2.new(1, -20, 0, 10)
     trackContainer.Position = UDim2.new(0, 10, 0, 25)
@@ -221,7 +219,39 @@ function UI.AddSlider(config)
     return frame
 end
 
--- Fungsi checkbox (kotak dengan centang)
+-- Tombol
+function UI.AddButton(config)
+    local container = buttonContainer
+    local text = config.Text or "Button"
+    local callback = config.Callback or function() end
+
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 0, 30)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 14
+    button.BorderSizePixel = 0
+    button.Parent = container
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Parent = button
+
+    button.MouseButton1Click:Connect(callback)
+
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+    end)
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end)
+
+    return button
+end
+
+-- Checkbox
 function UI.AddCheckbox(config)
     local container = switchContainer
     local text = config.Text or "Checkbox"
@@ -372,6 +402,7 @@ end)
 local Player = localPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
 
+-- Prioritas mutation
 local MutationPriority = {
     Hacker = 1,
     Valentine = 2,
@@ -382,6 +413,7 @@ local MutationPriority = {
     Common = 7
 }
 
+-- State untuk switch
 local autoStates = {
     AlwaysGround = false,
     RemoveConveyor = false,
@@ -392,7 +424,9 @@ local autoStates = {
     RemoveFallPart = false,
     AutoSecret = false,
     AutoDivine = false,
-    AutoSupreme = false
+    AutoSupreme = false,
+    InstantClaim = false,
+    LoadAll = false
 }
 
 local loops = {}
@@ -418,8 +452,15 @@ local function startLoop(name, func)
     end
 end
 
+-- Fungsi teleport aman
+local function teleportTo(pos)
+    if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        Player.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+    end
+end
+
 -- ==================================================
--- 8.1 Always Ground (CanCollide = true)
+-- 8.1 Always Ground
 -- ==================================================
 local groundPart = nil
 local function updateAlwaysGround()
@@ -427,9 +468,9 @@ local function updateAlwaysGround()
         if not groundPart or not groundPart.Parent then
             groundPart = Instance.new("Part")
             groundPart.Name = "AlwaysGroundByAzka"
-            groundPart.Size = Vector3.new(8, 1, 8)  -- ukuran lebih besar
+            groundPart.Size = Vector3.new(8, 1, 8)
             groundPart.Anchored = true
-            groundPart.CanCollide = true   -- Diperbaiki: agar bisa diinjak
+            groundPart.CanCollide = true
             groundPart.Transparency = 1
             groundPart.Parent = workspace
         end
@@ -446,18 +487,16 @@ local function updateAlwaysGround()
 end
 
 -- ==================================================
--- 8.2 Remove Conveyor (Obby2) - Perbaikan nama folder dan part
+-- 8.2 Remove Conveyor
 -- ==================================================
 local function removeConveyorLoop()
-    local conveyors = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Obbies") and workspace.Map.Obbies:FindFirstChild("Obby2") and workspace.Map.Obbies.Obby2:FindFirstChild("Conveyors")  -- nama folder Conveyors (dengan 's')
+    local conveyors = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Obbies") and workspace.Map.Obbies:FindFirstChild("Obby2") and workspace.Map.Obbies.Obby2:FindFirstChild("Conveyors")
     if conveyors then
         for _, folder in ipairs(conveyors:GetChildren()) do
             if folder:IsA("Folder") then
                 for _, part in ipairs(folder:GetChildren()) do
                     if part:IsA("Part") then
-                        -- Set attribute "speed" ke 0 (sebagai string, sesuai deskripsi)
                         part:SetAttribute("speed", "0")
-                        -- Juga set Velocity jika ada
                         if part:FindFirstChild("Velocity") then
                             part.Velocity = Vector3.new()
                         end
@@ -469,7 +508,7 @@ local function removeConveyorLoop()
 end
 
 -- ==================================================
--- 8.3 Remove Ball (Obby3)
+-- 8.3 Remove Ball
 -- ==================================================
 local function removeBallLoop()
     local ball = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Obbies") and workspace.Map.Obbies:FindFirstChild("Obby3") and workspace.Map.Obbies.Obby3:FindFirstChild("Ball")
@@ -479,7 +518,7 @@ local function removeBallLoop()
 end
 
 -- ==================================================
--- 8.4 Remove Wave (Obby4)
+-- 8.4 Remove Wave
 -- ==================================================
 local function removeWaveLoop()
     local wave = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Obbies") and workspace.Map.Obbies:FindFirstChild("Obby4") and workspace.Map.Obbies.Obby4:FindFirstChild("Wave")
@@ -489,7 +528,7 @@ local function removeWaveLoop()
 end
 
 -- ==================================================
--- 8.5 Remove Lavas (Obby5)
+-- 8.5 Remove Lavas
 -- ==================================================
 local function removeLavasLoop()
     local lavas = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Obbies") and workspace.Map.Obbies:FindFirstChild("Obby5") and workspace.Map.Obbies.Obby5:FindFirstChild("Lavas")
@@ -499,7 +538,7 @@ local function removeLavasLoop()
 end
 
 -- ==================================================
--- 8.6 Remove MovingPart (Obby6)
+-- 8.6 Remove MovingPart
 -- ==================================================
 local function removeMovingPartLoop()
     local movingParts = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Obbies") and workspace.Map.Obbies:FindFirstChild("Obby6") and workspace.Map.Obbies.Obby6:FindFirstChild("MovingParts")
@@ -513,7 +552,7 @@ local function removeMovingPartLoop()
 end
 
 -- ==================================================
--- 8.7 Remove FallPart (Obby8)
+-- 8.7 Remove FallPart
 -- ==================================================
 local function removeFallPartLoop()
     local fallParts = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Obbies") and workspace.Map.Obbies:FindFirstChild("Obby8") and workspace.Map.Obbies.Obby8:FindFirstChild("FallParts")
@@ -531,14 +570,13 @@ local function removeFallPartLoop()
 end
 
 -- ==================================================
--- 8.8 Auto Functions (Secret, Divine, Supreme)
+-- 8.8 Auto Functions (Secret, Divine, Supreme) - Perbaikan
 -- ==================================================
 local function getMutationPriority(model)
     local mutationLabel = model:FindFirstChild("BillboardAttachment") and
                           model.BillboardAttachment:FindFirstChild("EntityBillboardTemplate") and
                           model.BillboardAttachment.EntityBillboardTemplate:FindFirstChild("MutationLabel")
     if mutationLabel and mutationLabel:IsA("TextLabel") then
-        -- Gunakan properti Text
         local text = mutationLabel.Text
         return MutationPriority[text] or 999
     end
@@ -579,7 +617,6 @@ local function findBestBrainrot(targetRarity)
 end
 
 local function interactWithBrainrot(model)
-    -- Cari ProximityPrompt
     local prompt = nil
     for _, child in ipairs(model:GetDescendants()) do
         if child:IsA("ProximityPrompt") then
@@ -589,7 +626,6 @@ local function interactWithBrainrot(model)
     end
     if not prompt then return false end
 
-    -- Teleport ke dekat model
     if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
         local root = Player.Character.HumanoidRootPart
         local targetCF = model:GetPivot() * CFrame.new(0, 0, -3)
@@ -597,7 +633,6 @@ local function interactWithBrainrot(model)
     end
     task.wait(0.5)
 
-    -- Simulasi tahan E
     virtualInput:SendKeyEvent(true, Enum.KeyCode.E, false, nil)
     task.wait(1.6)
     virtualInput:SendKeyEvent(false, Enum.KeyCode.E, false, nil)
@@ -606,10 +641,7 @@ local function interactWithBrainrot(model)
 end
 
 local function teleportBack()
-    if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-        local root = Player.Character.HumanoidRootPart
-        root.CFrame = CFrame.new(-1107.992, 62.500, -1193.344)
-    end
+    teleportTo(Vector3.new(-1107.992, 62.500, -1193.344))
 end
 
 local autoCollectRunning = false
@@ -654,9 +686,97 @@ local function updateAutoCollect()
 end
 
 -- ==================================================
+-- 8.9 Instant Claim
+-- ==================================================
+local instantClaimRunning = false
+local savedPosition = nil
+
+local function getTimerText(model)
+    local clock = model:FindFirstChild("BillboardAttachment") and
+                  model.BillboardAttachment:FindFirstChild("EntityBillboardTemplate") and
+                  model.BillboardAttachment.EntityBillboardTemplate:FindFirstChild("ClockTimer")
+    if clock and clock:IsA("Frame") then
+        local textLabel = clock:FindFirstChildOfClass("TextLabel")
+        if textLabel then
+            return textLabel.Text
+        end
+    end
+    return nil
+end
+
+local function startInstantClaim()
+    if instantClaimRunning then return end
+    instantClaimRunning = true
+
+    while autoStates.InstantClaim do
+        local caches = workspace:FindFirstChild("Caches")
+        if caches then
+            local clientEntities = caches:FindFirstChild("ClientEntities")
+            if clientEntities then
+                for _, model in ipairs(clientEntities:GetChildren()) do
+                    if model:IsA("Model") then
+                        local timerText = getTimerText(model)
+                        if timerText then
+                            -- Simpan timer pertama
+                            local firstTimer = timerText
+                            task.wait(0.2)
+                            local secondTimer = getTimerText(model)
+                            if secondTimer and secondTimer ~= firstTimer then
+                                -- Timer berubah, claim
+                                if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+                                    savedPosition = Player.Character.HumanoidRootPart.Position
+                                    teleportTo(Vector3.new(-1111.943, 63, -1194.301)) -- Home
+                                    task.wait(0.5)
+                                    if savedPosition then
+                                        teleportTo(savedPosition)
+                                        savedPosition = nil
+                                    end
+                                end
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        task.wait(1)
+    end
+    instantClaimRunning = false
+end
+
+-- ==================================================
+-- 8.10 Load All
+-- ==================================================
+local loadAllRunning = false
+local function startLoadAll()
+    if loadAllRunning then return end
+    loadAllRunning = true
+
+    while autoStates.LoadAll do
+        -- Akses semua model di ClientEntities untuk memaksa mereka dimuat
+        local caches = workspace:FindFirstChild("Caches")
+        if caches then
+            local clientEntities = caches:FindFirstChild("ClientEntities")
+            if clientEntities then
+                for _, model in ipairs(clientEntities:GetChildren()) do
+                    if model:IsA("Model") then
+                        -- Akses properti untuk memicu loading
+                        model:GetDescendants()
+                    end
+                end
+            end
+        end
+        -- Juga akses part di workspace
+        workspace:GetDescendants()
+        task.wait(2) -- interval agar tidak terlalu berat
+    end
+    loadAllRunning = false
+end
+
+-- ==================================================
 -- 9. MENAMBAHKAN ELEMEN KE GUI
 -- ==================================================
--- Slider Walkspeed (dengan layout yang sudah diperbaiki)
+-- Slide: Walkspeed
 UI.AddSlider({
     Text = "Walkspeed",
     Min = 16,
@@ -669,7 +789,69 @@ UI.AddSlider({
     end
 })
 
--- Checkbox Always Ground
+-- Tombol Teleport
+UI.AddButton({
+    Text = "Home",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, -1194.301))
+    end
+})
+UI.AddButton({
+    Text = "Obby 2",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, -857.503))
+    end
+})
+UI.AddButton({
+    Text = "Obby 3",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, -490.799))
+    end
+})
+UI.AddButton({
+    Text = "Obby 4",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, -132.559))
+    end
+})
+UI.AddButton({
+    Text = "Obby 5",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, 341.683))
+    end
+})
+UI.AddButton({
+    Text = "Obby 6",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, 863.872))
+    end
+})
+UI.AddButton({
+    Text = "Obby 7",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, 1468.275))
+    end
+})
+UI.AddButton({
+    Text = "Obby 8",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, 2200.812))
+    end
+})
+UI.AddButton({
+    Text = "Obby 9",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, 3233.783))
+    end
+})
+UI.AddButton({
+    Text = "Obby 10",
+    Callback = function()
+        teleportTo(Vector3.new(-1111.943, 63, 4246.001))
+    end
+})
+
+-- Switch (checkbox)
 UI.AddCheckbox({
     Text = "Always Ground",
     Default = false,
@@ -679,12 +861,11 @@ UI.AddCheckbox({
             startLoop("AlwaysGround", updateAlwaysGround)
         else
             stopLoop("AlwaysGround")
-            updateAlwaysGround() -- hapus part
+            updateAlwaysGround()
         end
     end
 })
 
--- Remove Conveyor
 UI.AddCheckbox({
     Text = "Remove Conveyor (Obby2)",
     Default = false,
@@ -698,7 +879,6 @@ UI.AddCheckbox({
     end
 })
 
--- Remove Ball
 UI.AddCheckbox({
     Text = "Remove Ball (Obby3)",
     Default = false,
@@ -712,7 +892,6 @@ UI.AddCheckbox({
     end
 })
 
--- Remove Wave
 UI.AddCheckbox({
     Text = "Remove Wave (Obby4)",
     Default = false,
@@ -726,7 +905,6 @@ UI.AddCheckbox({
     end
 })
 
--- Remove Lavas
 UI.AddCheckbox({
     Text = "Remove Lavas (Obby5)",
     Default = false,
@@ -740,7 +918,6 @@ UI.AddCheckbox({
     end
 })
 
--- Remove MovingPart
 UI.AddCheckbox({
     Text = "Remove MovingPart (Obby6)",
     Default = false,
@@ -754,7 +931,6 @@ UI.AddCheckbox({
     end
 })
 
--- Remove FallPart
 UI.AddCheckbox({
     Text = "Remove FallPart (Obby8)",
     Default = false,
@@ -768,7 +944,6 @@ UI.AddCheckbox({
     end
 })
 
--- Auto Secret
 UI.AddCheckbox({
     Text = "Auto Secret",
     Default = false,
@@ -778,7 +953,6 @@ UI.AddCheckbox({
     end
 })
 
--- Auto Divine
 UI.AddCheckbox({
     Text = "Auto Divine",
     Default = false,
@@ -788,7 +962,6 @@ UI.AddCheckbox({
     end
 })
 
--- Auto Supreme
 UI.AddCheckbox({
     Text = "Auto Supreme",
     Default = false,
@@ -798,10 +971,31 @@ UI.AddCheckbox({
     end
 })
 
+UI.AddCheckbox({
+    Text = "Instant Claim",
+    Default = false,
+    Callback = function(state)
+        autoStates.InstantClaim = state
+        if state then
+            coroutine.wrap(startInstantClaim)()
+        end
+    end
+})
+
+UI.AddCheckbox({
+    Text = "Load All",
+    Default = false,
+    Callback = function(state)
+        autoStates.LoadAll = state
+        if state then
+            coroutine.wrap(startLoadAll)()
+        end
+    end
+})
+
 -- ==================================================
 -- 10. EXPOSE FUNGSI KE GLOBAL
 -- ==================================================
 _G[guiName] = UI
 
 print("GUI Speed Escape for Brainrots berhasil dimuat. Gunakan _G['" .. guiName .. "'] untuk menambahkan elemen secara manual.")
-print("Contoh: _G['" .. guiName .. "'].AddCheckbox({Text = 'Test', Callback = function(s) print(s) end})")
