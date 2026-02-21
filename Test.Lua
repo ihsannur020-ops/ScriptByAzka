@@ -869,18 +869,7 @@ UI.AddSlider({
     end
 })
 
-UI.AddSlider({
-    Text = "Jump Power",
-    Min = 5,
-    Max = 150,
-    Default = 5,
-    Callback = function(value)
-        local character = localPlayer.Character
-        if character and character:FindFirstChild("Humanoid") then
-            character.Humanoid.JumpPower = value
-        end
-    end
-})
+-- Jump Power slider removed as requested
 
 UI.AddButton({
     Text = "Remove Lava",
