@@ -103,10 +103,10 @@ local slideContainer = createContainer("SlideContainer")
 local buttonContainer = createContainer("ButtonContainer")
 local switchContainer = createContainer("SwitchContainer")
 
--- ===== NEW FUSE MACHINE CONTAINER =====
+-- ===== FUSE MACHINE CONTAINER (FIXED) =====
 local fuseContainer = createContainer("Fuse Machine")
 
--- Title for the container
+-- Title
 local fuseTitle = Instance.new("TextLabel")
 fuseTitle.Size = UDim2.new(1, 0, 0, 20)
 fuseTitle.BackgroundTransparency = 1
@@ -116,7 +116,7 @@ fuseTitle.Font = Enum.Font.GothamBold
 fuseTitle.TextSize = 16
 fuseTitle.Parent = fuseContainer
 
--- Timer display label
+-- Timer display
 local timerLabel = Instance.new("TextLabel")
 timerLabel.Size = UDim2.new(1, 0, 0, 30)
 timerLabel.BackgroundTransparency = 1
@@ -126,7 +126,6 @@ timerLabel.Font = Enum.Font.Gotham
 timerLabel.TextSize = 14
 timerLabel.Parent = fuseContainer
 
--- Function to update timer from the game's SurfaceGui
 local function updateFuseTimer()
     local gameFolder = workspace:FindFirstChild("GameFolder")
     if not gameFolder then return end
@@ -142,7 +141,6 @@ local function updateFuseTimer()
     end
 end
 
--- Poll timer every 0.5 seconds
 task.spawn(function()
     while true do
         updateFuseTimer()
@@ -150,13 +148,24 @@ task.spawn(function()
     end
 end)
 
--- Helper to fire a ProximityPrompt (simulate hold)
+-- Helper to fire a ProximityPrompt (with optional teleport)
 local function fireProximityPrompt(prompt)
-    if prompt and prompt:IsA("ProximityPrompt") then
-        prompt:InputHoldBegin()
-        task.wait(prompt.HoldDuration or 0.1)
-        prompt:InputHoldEnd()
+    if not (prompt and prompt:IsA("ProximityPrompt")) then return end
+    -- Teleport to the prompt's parent part to ensure range
+    local part = prompt.Parent
+    if part and part:IsA("BasePart") then
+        local character = localPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            character.HumanoidRootPart.CFrame = part.CFrame + Vector3.new(0, 3, 0)
+            task.wait(0.3)
+        end
     end
+    -- Simulate hold
+    pcall(function()
+        prompt:InputHoldBegin()
+        task.wait(prompt.HoldDuration)
+        prompt:InputHoldEnd()
+    end)
 end
 
 -- Create slot buttons (1-4)
@@ -191,8 +200,14 @@ local function createFuseSlotButton(slotNumber)
         if not places then return end
         local slotFolder = places:FindFirstChild(tostring(slotNumber))
         if not slotFolder then return end
+
+        -- First try to find "PlacePrompt" directly, else any ProximityPrompt
         local prompt = slotFolder:FindFirstChild("PlacePrompt")
-        if prompt and prompt:IsA("ProximityPrompt") then
+        if not prompt or not prompt:IsA("ProximityPrompt") then
+            prompt = slotFolder:FindFirstChildWhichIsA("ProximityPrompt")
+        end
+
+        if prompt then
             fireProximityPrompt(prompt)
         end
     end)
@@ -219,7 +234,6 @@ local collectBtnCorner = Instance.new("UICorner")
 collectBtnCorner.CornerRadius = UDim.new(0, 4)
 collectBtnCorner.Parent = collectBtn
 
--- Function to update collect button enabled state based on prompt.Enabled
 local function updateCollectButton()
     local gameFolder = workspace:FindFirstChild("GameFolder")
     if not gameFolder then
@@ -253,7 +267,6 @@ local function updateCollectButton()
     end
 end
 
--- Poll collect button state every second (as fallback)
 task.spawn(function()
     while true do
         updateCollectButton()
@@ -261,7 +274,6 @@ task.spawn(function()
     end
 end)
 
--- Also connect to the prompt's Enabled property change if possible
 local function connectCollectPromptChanged()
     local gameFolder = workspace:FindFirstChild("GameFolder")
     if not gameFolder then return end
@@ -278,7 +290,6 @@ local function connectCollectPromptChanged()
 end
 task.spawn(connectCollectPromptChanged)
 
--- Click handler for collect button
 collectBtn.MouseButton1Click:Connect(function()
     if not collectBtn.Active then return end
     local gameFolder = workspace:FindFirstChild("GameFolder")
@@ -307,10 +318,9 @@ function UI.AddSlider(config)
     local default = config.Default or (min + max) / 2
     local callback = config.Callback or function() end
 
-    -- Shift slider more to the right: left offset increased to 30
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, -40, 0, 30)
-    frame.Position = UDim2.new(0, 30, 0, 0)  -- More to the right
+    frame.Position = UDim2.new(0, 30, 0, 0)
     frame.BackgroundTransparency = 1
     frame.Parent = container
 
