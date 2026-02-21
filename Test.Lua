@@ -113,9 +113,10 @@ function UI.AddSlider(config)
     local default = config.Default or (min + max) / 2
     local callback = config.Callback or function() end
 
+    -- Shift slider more to the right: left offset increased to 30
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 30)   -- lebar lebih sempit
-    frame.Position = UDim2.new(0, 0, 0, 0) -- lebih ke kanan
+    frame.Size = UDim2.new(1, -40, 0, 30)
+    frame.Position = UDim2.new(0, 30, 0, 0)  -- More to the right
     frame.BackgroundTransparency = 1
     frame.Parent = container
 
@@ -389,10 +390,10 @@ local plotPositions = {
 }
 
 local afterInteractPoint = Vector3.new(-127.503, 5, -1.24)
-local fuseMachinePoint = Vector3.new(-1.072, 510, -3609.463)
+local fuseMachinePoint = Vector3.new(-1.072, 510, -3609.463)  -- New fuse machine teleport
 
 local currentPlotNumber = nil
-local instantProximityEnabled = false
+local instantProximityEnabled = false  -- Moved to top for clarity
 
 local function getPlotNumber()
     if currentPlotNumber then return currentPlotNumber end
@@ -431,6 +432,7 @@ local function teleportToHome()
     end
 end
 
+-- Modified interactWithBrainrot to use instant proximity if enabled
 local function interactWithBrainrot(brainrotModel)
     if not brainrotModel then return false end
     local holdDuration = instantProximityEnabled and 0.1 or 1.7
@@ -514,10 +516,12 @@ local function findModelsInFolder(folderName)
     return models
 end
 
+-- New function to find all Lucky Block models across all Brainrots subfolders
 local function findLuckyBlockModels()
     local brainrotsFolder = workspace:FindFirstChild("GameFolder") and workspace.GameFolder:FindFirstChild("Brainrots")
     if not brainrotsFolder then return {} end
     local luckyBlocks = {}
+    -- Search through all folders inside Brainrots
     for _, folder in ipairs(brainrotsFolder:GetChildren()) do
         if folder:IsA("Folder") then
             for _, model in ipairs(folder:GetChildren()) do
@@ -530,11 +534,14 @@ local function findLuckyBlockModels()
     return luckyBlocks
 end
 
+-- Function to simulate clicking inventory slot using VirtualInputManager
 local function clickInventorySlot(slotNumber)
     slotNumber = slotNumber or 1
+    -- Try to find the hotbar GUI
     local playerGui = localPlayer:FindFirstChildOfClass("PlayerGui")
     if not playerGui then return end
 
+    -- Common hotbar names
     local hotbarNames = {"Hotbar", "Inventory", "Toolbar"}
     local button = nil
 
@@ -543,6 +550,7 @@ local function clickInventorySlot(slotNumber)
             for _, hotbarName in ipairs(hotbarNames) do
                 local hotbar = gui:FindFirstChild(hotbarName)
                 if hotbar then
+                    -- Look for a button with the slot number
                     button = hotbar:FindFirstChild(tostring(slotNumber)) or 
                              hotbar:FindFirstChild("Slot"..slotNumber) or
                              hotbar:FindFirstChild("Button"..slotNumber)
@@ -556,12 +564,14 @@ local function clickInventorySlot(slotNumber)
     end
 
     if button then
+        -- Fire the click event
         if firesignal then
             firesignal(button.MouseButton1Click)
         else
             button.MouseButton1Click:Fire()
         end
     else
+        -- Fallback: Use VirtualInputManager to simulate key press
         local keyCode = nil
         if slotNumber == 1 then keyCode = Enum.KeyCode.One
         elseif slotNumber == 2 then keyCode = Enum.KeyCode.Two
@@ -584,24 +594,39 @@ end
 
 local function processRebirthNeed()
     local rebirths = localPlayer.leaderstats and localPlayer.leaderstats:FindFirstChild("Rebirths")
-    if not rebirths then return end
+    if not rebirths then
+        return
+    end
     local value = tonumber(rebirths.Value)
-    if not value then return end
+    if not value then
+        return
+    end
     local index = value + 1
-    if index > 12 then return end
+    if index > 12 then
+        return
+    end
     local brainrotName = rebirthData[index]
-    if not brainrotName then return end
+    if not brainrotName then
+        return
+    end
 
     local models = findModelsByName(brainrotName)
-    if #models == 0 then return end
+    if #models == 0 then
+        return
+    end
 
     local targetModel = findAvailableModel(models)
-    if not targetModel then return end
+    if not targetModel then
+        return
+    end
 
     teleport(targetModel:GetPivot().Position + Vector3.new(0, 3, 0))
     task.wait(0.5)
+
     interactWithBrainrot(targetModel)
+
     task.wait(1.7)
+
     teleport(afterInteractPoint)
     task.wait(0.5)
 
@@ -612,14 +637,15 @@ local function processRebirthNeed()
         teleport(plotPositions[1])
     end
 
+    -- Simulate inventory click sequence
     task.wait(1)
-    clickInventorySlot(1)
+    clickInventorySlot(1)  -- Click slot 1 to hold item
     task.wait(1)
-    clickInventorySlot(1)
+    clickInventorySlot(1)  -- Click again to release
 end
 
 local autoStates = {
-    LuckyBlock = false,
+    LuckyBlock = false,  -- New, placed first
     Godly = false,
     Celestial = false,
     Secret = false,
@@ -637,12 +663,17 @@ local function autoCollect(typeName)
     if #models == 0 then return false end
 
     local targetModel = findAvailableModel(models)
-    if not targetModel then return false end
+    if not targetModel then
+        return false
+    end
 
     teleport(targetModel:GetPivot().Position + Vector3.new(0, 3, 0))
     task.wait(0.5)
+
     interactWithBrainrot(targetModel)
+
     task.wait(1.7)
+
     teleport(afterInteractPoint)
     task.wait(0.5)
 
@@ -653,10 +684,11 @@ local function autoCollect(typeName)
         teleport(plotPositions[1])
     end
 
+    -- Simulate inventory click sequence
     task.wait(1)
-    clickInventorySlot(1)
+    clickInventorySlot(1)  -- Hold
     task.wait(1)
-    clickInventorySlot(1)
+    clickInventorySlot(1)  -- Release
 
     return true
 end
@@ -764,7 +796,7 @@ local function clickAllUpgrades()
             if firesignal then
                 firesignal(event)
             else
-                pcall(function()
+                local success, err = pcall(function()
                     event:Fire()
                 end)
             end
@@ -818,6 +850,7 @@ local function claimManual()
     teleport(savedPos)
 end
 
+-- New function for Fuse Machine button
 local function teleportToFuseMachine()
     teleport(fuseMachinePoint)
 end
@@ -884,11 +917,13 @@ UI.AddButton({
     Callback = claimManual
 })
 
+-- New Fuse Machine button
 UI.AddButton({
     Text = "Fuse Machine",
     Callback = teleportToFuseMachine
 })
 
+-- Checkboxes: Instant Proximity first, then Auto Lucky Block (above Godly)
 createCheckbox({
     Text = "Instant Proximity",
     Default = false,
@@ -897,6 +932,7 @@ createCheckbox({
     end
 })
 
+-- New Auto Lucky Block checkbox (placed above Godly)
 createCheckbox({
     Text = "Auto Lucky Block",
     Default = false,
