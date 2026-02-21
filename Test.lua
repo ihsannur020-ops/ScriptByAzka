@@ -113,10 +113,10 @@ function UI.AddSlider(config)
     local default = config.Default or (min + max) / 2
     local callback = config.Callback or function() end
 
-    -- Slider shifted further right: left offset 40, width parent width -50
+    -- Slider shifted further right: offset 60, width reduced by 80
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -50, 0, 30)
-    frame.Position = UDim2.new(0, 40, 0, 0)  -- More to the right
+    frame.Size = UDim2.new(1, -80, 0, 30)   -- narrower
+    frame.Position = UDim2.new(0, 60, 0, 0) -- more right
     frame.BackgroundTransparency = 1
     frame.Parent = container
 
